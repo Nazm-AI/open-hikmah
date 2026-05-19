@@ -16,8 +16,9 @@ export function Header({ onSearchOpen }: HeaderProps) {
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const handleSignIn = async () => {
-    const { url, codeVerifier } = await buildAuthUrl();
+    const { url, codeVerifier, state } = await buildAuthUrl();
     sessionStorage.setItem("pkce_code_verifier", codeVerifier);
+    sessionStorage.setItem("pkce_state", state);
     window.location.href = url;
   };
 

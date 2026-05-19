@@ -4,11 +4,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface AuthStore {
+  // Tokens kept in memory only — not persisted (prevents localStorage XSS exposure)
   accessToken: string | null;
   refreshToken: string | null;
+  // Bookmarks are non-sensitive and are persisted for offline use
   bookmarks: string[];
 
-  setTokens: (accessToken: string, refreshToken: string) => void;
+  setTokens: (accessToken: string, refreshToken: string | null) => void;
   clearAuth: () => void;
   toggleBookmark: (ref: string) => void;
   isBookmarked: (ref: string) => boolean;
@@ -32,32 +34,42 @@ export const useAuthStore = create<AuthStore>()(
 
       toggleBookmark: (ref) => {
         const { bookmarks, accessToken } = get();
-        const isAlready = bookmarks.includes(ref);
+        const wasBookmarked = bookmarks.includes(ref);
 
-        // optimistic update
+        // Optimistic update
         set({
-          bookmarks: isAlready
+          bookmarks: wasBookmarked
             ? bookmarks.filter((r) => r !== ref)
             : [...bookmarks, ref],
         });
 
-        // sync to API if authenticated
-        if (accessToken) {
-          if (isAlready) {
-            fetch(`/api/bookmarks/${encodeURIComponent(ref)}`, {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${accessToken}` },
-            }).catch(() => {});
-          } else {
-            fetch("/api/bookmarks", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${accessToken}`,
-              },
-              body: JSON.stringify({ ref }),
-            }).catch(() => {});
-          }
+        if (!accessToken) return;
+
+        const rollback = () =>
+          set((s) => ({
+            bookmarks: wasBookmarked
+              ? [...s.bookmarks, ref]
+              : s.bookmarks.filter((r) => r !== ref),
+          }));
+
+        if (wasBookmarked) {
+          fetch(`/api/bookmarks/${encodeURIComponent(ref)}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${accessToken}` },
+          })
+            .then((r) => { if (!r.ok) rollback(); })
+            .catch(rollback);
+        } else {
+          fetch("/api/bookmarks", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ ref }),
+          })
+            .then((r) => { if (!r.ok) rollback(); })
+            .catch(rollback);
         }
       },
 
@@ -76,11 +88,8 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: "open-hikmah-auth",
-      partialize: (s) => ({
-        accessToken: s.accessToken,
-        refreshToken: s.refreshToken,
-        bookmarks: s.bookmarks,
-      }),
+      // Only persist the bookmark list — tokens stay in memory for security
+      partialize: (s) => ({ bookmarks: s.bookmarks }),
     }
   )
 );

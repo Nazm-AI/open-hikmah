@@ -5,6 +5,6 @@ export default async function Page({
 }: {
   searchParams: Promise<{ code?: string; state?: string; error?: string }>;
 }) {
-  const { code, error } = await searchParams;
-  return <CallbackClient code={code} error={error} />;
+  const { code, state, error } = await searchParams;
+  return <CallbackClient code={code} state={state} error={error} />;
 }

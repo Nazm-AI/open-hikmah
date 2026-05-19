@@ -12,6 +12,13 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ ref: string }> }
 ) {
+  if (!QF_API_BASE || !QF_CLIENT_ID) {
+    return NextResponse.json(
+      { error: "QF_API_BASE or NEXT_PUBLIC_QF_CLIENT_ID is not configured" },
+      { status: 503 }
+    );
+  }
+
   const token = extractToken(req);
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

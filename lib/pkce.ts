@@ -15,7 +15,11 @@ async function sha256Base64url(input: string): Promise<string> {
     .replace(/=/g, "");
 }
 
-export async function buildAuthUrl(): Promise<{ url: string; codeVerifier: string }> {
+export async function buildAuthUrl(): Promise<{
+  url: string;
+  codeVerifier: string;
+  state: string;
+}> {
   const codeVerifier = randomString(128);
   const codeChallenge = await sha256Base64url(codeVerifier);
   const state = randomString(32);
@@ -36,5 +40,6 @@ export async function buildAuthUrl(): Promise<{ url: string; codeVerifier: strin
   return {
     url: `${authBase}/oauth2/authorize?${params.toString()}`,
     codeVerifier,
+    state,
   };
 }

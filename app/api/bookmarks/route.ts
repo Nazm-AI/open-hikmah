@@ -3,6 +3,16 @@ import { NextRequest, NextResponse } from "next/server";
 const QF_API_BASE = process.env.QF_API_BASE ?? "";
 const QF_CLIENT_ID = process.env.NEXT_PUBLIC_QF_CLIENT_ID ?? "";
 
+function checkConfig(): NextResponse | null {
+  if (!QF_API_BASE || !QF_CLIENT_ID) {
+    return NextResponse.json(
+      { error: "QF_API_BASE or NEXT_PUBLIC_QF_CLIENT_ID is not configured" },
+      { status: 503 }
+    );
+  }
+  return null;
+}
+
 function extractToken(req: NextRequest): string | null {
   const auth = req.headers.get("authorization");
   return auth?.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -17,6 +27,8 @@ function qfHeaders(token: string) {
 }
 
 export async function GET(req: NextRequest) {
+  const misconfig = checkConfig();
+  if (misconfig) return misconfig;
   const token = extractToken(req);
   if (!token) return NextResponse.json({ refs: [] });
 
@@ -44,6 +56,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const misconfig = checkConfig();
+  if (misconfig) return misconfig;
+
   const token = extractToken(req);
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

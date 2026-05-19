@@ -82,7 +82,7 @@ The app is deployed on Vercel with a custom domain.
 1. Push to GitHub and import the repo at [vercel.com/new](https://vercel.com/new)
 2. Add all environment variables from `.env.example` in Vercel's project settings
 3. Under **Domains**, add your custom domain and follow the DNS instructions
-4. Register `https://yourdomain.com/auth/callback` as a redirect URI with Quran Foundation
+4. Register `https://yourdomain.com/callback` as a redirect URI with Quran Foundation
 
 ---
 

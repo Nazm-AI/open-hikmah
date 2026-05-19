@@ -7,10 +7,11 @@ import { Loader2 } from "lucide-react";
 
 interface Props {
   code?: string;
+  state?: string;
   error?: string;
 }
 
-export function CallbackClient({ code, error }: Props) {
+export function CallbackClient({ code, state, error }: Props) {
   const router = useRouter();
   const { setTokens, loadRemoteBookmarks } = useAuthStore();
   const didRun = useRef(false);
@@ -25,12 +26,18 @@ export function CallbackClient({ code, error }: Props) {
     }
 
     const codeVerifier = sessionStorage.getItem("pkce_code_verifier");
-    if (!codeVerifier) {
+    const expectedState = sessionStorage.getItem("pkce_state");
+
+    // Verify CSRF state before doing anything with the code
+    if (!codeVerifier || !expectedState || expectedState !== state) {
+      sessionStorage.removeItem("pkce_code_verifier");
+      sessionStorage.removeItem("pkce_state");
       router.replace("/");
       return;
     }
 
     sessionStorage.removeItem("pkce_code_verifier");
+    sessionStorage.removeItem("pkce_state");
 
     fetch("/api/auth/exchange", {
       method: "POST",
