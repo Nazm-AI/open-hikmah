@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -15,6 +15,7 @@ import { VerseNode } from "./VerseNode";
 import { HikmahEdge } from "./HikmahEdge";
 import { useCanvasStore } from "@/store/canvas";
 import { useActivityTracker } from "@/hooks/useActivityTracker";
+import { useCanvasPersistence } from "@/hooks/useCanvasPersistence";
 import type { ConnectionResult, Verse } from "@/types/quran";
 
 const nodeTypes = { verse: VerseNode };
@@ -37,10 +38,12 @@ function radialPos(
 
 function CanvasInner() {
   useActivityTracker();
+  useCanvasPersistence();
 
   const reactFlow = useReactFlow();
   const expandingRef = useRef(false);
   const mountedRef = useRef(true);
+  const [expansionError, setExpansionError] = useState<string | null>(null);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -118,6 +121,10 @@ function CanvasInner() {
         }
       } catch (err) {
         console.error("Expansion failed:", err);
+        if (mountedRef.current) {
+          setExpansionError("Could not find connections. Try a different type.");
+          setTimeout(() => setExpansionError(null), 3500);
+        }
       } finally {
         if (mountedRef.current) setExpandingNode(null);
         expandingRef.current = false;
@@ -176,6 +183,18 @@ function CanvasInner() {
 
   return (
     <div className="w-full h-full">
+      {expansionError && (
+        <div
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-md text-xs font-mono pointer-events-none"
+          style={{
+            background: "var(--color-surface-raised)",
+            border: "1px solid var(--color-border)",
+            color: "var(--color-text-muted)",
+          }}
+        >
+          {expansionError}
+        </div>
+      )}
       <ReactFlow
         nodes={nodes}
         edges={edges}
