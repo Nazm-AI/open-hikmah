@@ -58,6 +58,7 @@ export default function SocialPage() {
     const ctrl = new AbortController();
     const { signal } = ctrl;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingFriends(true);
     fetch("/api/social/friends", {
       headers: { Authorization: `Bearer ${accessToken}` },

@@ -14,6 +14,7 @@ export default function BookmarksPage() {
 
   useEffect(() => {
     if (bookmarks.length === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     Promise.all(
       bookmarks.map(async (ref) => {

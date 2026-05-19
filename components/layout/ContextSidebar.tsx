@@ -3,18 +3,13 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronDown, ChevronRight } from "lucide-react";
 import { useCanvasStore } from "@/store/canvas";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { EdgeKind } from "@/types/quran";
 
 function TafsirSection({ surah, ayah }: { surah: number; ayah: number }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setText(null);
-    setOpen(false);
-  }, [surah, ayah]);
 
   const handleOpen = async () => {
     if (open) { setOpen(false); return; }
@@ -149,7 +144,7 @@ export function ContextSidebar() {
                   {sidebarContent.verse.translation}
                 </p>
 
-                <TafsirSection surah={sidebarContent.verse.surah} ayah={sidebarContent.verse.ayah} />
+                <TafsirSection key={sidebarContent.verse.ref} surah={sidebarContent.verse.surah} ayah={sidebarContent.verse.ayah} />
               </>
             )}
 
