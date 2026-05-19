@@ -200,7 +200,6 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
                 placeholder="Search topics, or enter a ref like 2:255…"
                 className="flex-1 bg-transparent text-sm outline-none"
                 style={{ color: "var(--color-text-primary)" }}
-                disabled={busy}
               />
               <button
                 type="button"

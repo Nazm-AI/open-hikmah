@@ -125,7 +125,9 @@ export function ContextSidebar() {
                     </span>
                   </div>
                   <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
-                    {sidebarContent.fromVerse.translation.slice(0, 100)}…
+                    {sidebarContent.fromVerse.translation.length > 100
+                      ? `${sidebarContent.fromVerse.translation.slice(0, 100)}…`
+                      : sidebarContent.fromVerse.translation}
                   </p>
                 </div>
 
@@ -165,7 +167,9 @@ export function ContextSidebar() {
                     {sidebarContent.toVerse.arabicText}
                   </p>
                   <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
-                    {sidebarContent.toVerse.translation.slice(0, 100)}…
+                    {sidebarContent.toVerse.translation.length > 100
+                      ? `${sidebarContent.toVerse.translation.slice(0, 100)}…`
+                      : sidebarContent.toVerse.translation}
                   </p>
                 </div>
               </>

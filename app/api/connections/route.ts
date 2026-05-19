@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
   try {
     const message = await client.messages.create({
       model: "claude-opus-4-7",
-      max_tokens: 1024,
+      max_tokens: 16000,
       thinking: { type: "adaptive" },
       messages: [
         {

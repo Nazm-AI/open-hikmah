@@ -45,6 +45,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
           <button
             onClick={reset}
             title="Clear canvas"
+            aria-label="Clear all verses from canvas"
             className="w-7 h-7 rounded border flex items-center justify-center transition-colors cursor-pointer hover:border-red-700 hover:text-red-400"
             style={{
               borderColor: "var(--color-border)",
