@@ -7,4 +7,4 @@ process.env.QF_AUTH_BASE = "https://auth.test.qf.com";
 process.env.QF_CLIENT_SECRET = "test-client-secret";
 process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
 process.env.NEXT_PUBLIC_QF_AUTH_BASE = "https://auth.test.qf.com";
-process.env.ANTHROPIC_API_KEY = "sk-ant-test-00000000000000000000000000000000";
+process.env.ANTHROPIC_API_KEY ??= "test-anthropic-key";
