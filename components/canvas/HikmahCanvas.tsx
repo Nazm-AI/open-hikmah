@@ -8,6 +8,7 @@ import {
   Controls,
   useReactFlow,
   ReactFlowProvider,
+  type Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { VerseNode } from "./VerseNode";
@@ -36,6 +37,14 @@ function radialPos(
 function CanvasInner() {
   const reactFlow = useReactFlow();
   const expandingRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const nodes = useCanvasStore((s) => s.nodes);
   const edges = useCanvasStore((s) => s.edges);
@@ -48,6 +57,7 @@ function CanvasInner() {
   const setExpandingNode = useCanvasStore((s) => s.setExpandingNode);
   const setPendingExpand = useCanvasStore((s) => s.setPendingExpand);
   const setPendingAutoExpand = useCanvasStore((s) => s.setPendingAutoExpand);
+  const setOpenExpandNodeId = useCanvasStore((s) => s.setOpenExpandNodeId);
   const setSidebarContent = useCanvasStore((s) => s.setSidebarContent);
   const getNodeById = useCanvasStore((s) => s.getNodeById);
   const hasNode = useCanvasStore((s) => s.hasNode);
@@ -75,17 +85,16 @@ function CanvasInner() {
         if (!res.ok) throw new Error("Connections API failed");
 
         const connections: ConnectionResult[] = await res.json();
-        const newNodeIds: string[] = [];
 
         for (let i = 0; i < connections.length; i++) {
           await new Promise<void>((resolve) => setTimeout(resolve, 350 * i));
+          if (!mountedRef.current) break;
 
           const conn = connections[i];
           if (hasNode(conn.ref)) continue;
 
           const pos = radialPos(sourcePos, i, connections.length);
           const newId = addVerseNode(conn as unknown as Verse, pos);
-          newNodeIds.push(newId);
 
           addConnectionEdge({
             id: `edge-${nodeId}-${newId}`,
@@ -100,73 +109,51 @@ function CanvasInner() {
           });
         }
 
-        await new Promise<void>((resolve) => setTimeout(resolve, 400));
-        reactFlow.fitView({ padding: 0.35, maxZoom: 1, duration: 600 });
+        if (mountedRef.current) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 400));
+          reactFlow.fitView({ padding: 0.35, maxZoom: 1, duration: 600 });
+        }
       } catch (err) {
         console.error("Expansion failed:", err);
       } finally {
-        setExpandingNode(null);
+        if (mountedRef.current) setExpandingNode(null);
         expandingRef.current = false;
       }
     },
-    [
-      addVerseNode,
-      addConnectionEdge,
-      setExpandingNode,
-      hasNode,
-      reactFlow,
-    ]
+    [addVerseNode, addConnectionEdge, setExpandingNode, hasNode, reactFlow]
   );
 
   useEffect(() => {
     if (!pendingExpand) return;
-
     const { nodeId, ref, kind } = pendingExpand;
     setPendingExpand(null);
-
     const sourceNode = getNodeById(nodeId);
     if (!sourceNode) return;
-
     const verse = sourceNode.data as unknown as Verse;
-    runExpansion(
-      nodeId,
-      ref,
-      kind,
-      verse.arabicText,
-      verse.translation,
-      sourceNode.position
-    );
+    runExpansion(nodeId, ref, kind, verse.arabicText, verse.translation, sourceNode.position);
   }, [pendingExpand, setPendingExpand, getNodeById, runExpansion]);
 
   useEffect(() => {
     if (!pendingAutoExpand) return;
-
     const nodeId = pendingAutoExpand;
     setPendingAutoExpand(null);
-
     const sourceNode = getNodeById(nodeId);
     if (!sourceNode) return;
-
     const verse = sourceNode.data as unknown as Verse;
-    runExpansion(
-      nodeId,
-      verse.ref,
-      "thematic",
-      verse.arabicText,
-      verse.translation,
-      sourceNode.position
-    );
+    runExpansion(nodeId, verse.ref, "thematic", verse.arabicText, verse.translation, sourceNode.position);
   }, [pendingAutoExpand, setPendingAutoExpand, getNodeById, runExpansion]);
 
   const handleEdgeClick = useCallback(
-    (_: React.MouseEvent, edge: { source: string; target: string; data?: unknown }) => {
+    (_: React.MouseEvent, edge: Edge) => {
       const fromNode = nodes.find((n) => n.id === edge.source);
       const toNode = nodes.find((n) => n.id === edge.target);
       if (!fromNode || !toNode) return;
 
       const fromVerse = fromNode.data as unknown as Verse;
       const toVerse = toNode.data as unknown as Verse;
-      const edgeData = edge.data as { kind: "thematic" | "root" | "contrast"; label: string; reason?: string } | undefined;
+      const edgeData = edge.data as
+        | { kind: "thematic" | "root" | "contrast"; label: string; reason?: string }
+        | undefined;
 
       setSidebarContent({
         type: "edge",
@@ -180,6 +167,10 @@ function CanvasInner() {
     [nodes, setSidebarContent]
   );
 
+  const handlePaneClick = useCallback(() => {
+    setOpenExpandNodeId(null);
+  }, [setOpenExpandNodeId]);
+
   return (
     <div className="w-full h-full">
       <ReactFlow
@@ -190,6 +181,7 @@ function CanvasInner() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onEdgeClick={handleEdgeClick}
+        onPaneClick={handlePaneClick}
         fitView
         fitViewOptions={{ padding: 0.4, maxZoom: 1 }}
         minZoom={0.1}

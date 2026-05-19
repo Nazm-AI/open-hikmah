@@ -55,6 +55,13 @@
     background: color-mix(in srgb, var(--color-gold) 30%, transparent);
   }
 
+  /* Firefox scrollbar */
+  * {
+    scrollbar-color: var(--color-border) var(--color-surface);
+    scrollbar-width: thin;
+  }
+
+  /* Webkit scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;

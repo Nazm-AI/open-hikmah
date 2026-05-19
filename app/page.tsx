@@ -10,7 +10,19 @@ import { useCanvasStore } from "@/store/canvas";
 
 const HikmahCanvas = dynamic(
   () => import("@/components/canvas/HikmahCanvas").then((m) => m.HikmahCanvas),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center">
+        <div
+          className="text-xs font-mono tracking-wider uppercase"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          Loading canvas…
+        </div>
+      </div>
+    ),
+  }
 );
 
 export default function Home() {
@@ -19,11 +31,21 @@ export default function Home() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Don't hijack shortcuts when user is typing in an input
+      const target = e.target as HTMLElement;
+      const isInput =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target.isContentEditable;
+
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        if (isInput) return;
         e.preventDefault();
         setSearchOpen(true);
       }
-      if (e.key === "Escape") setSearchOpen(false);
+      if (e.key === "Escape" && !isInput) {
+        setSearchOpen(false);
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);

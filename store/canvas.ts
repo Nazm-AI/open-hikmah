@@ -15,6 +15,7 @@ interface CanvasStore {
   edges: Edge[];
   selectedNodeId: string | null;
   expandingNodeId: string | null;
+  openExpandNodeId: string | null;
   sidebarContent: SidebarContent | null;
   pendingExpand: PendingExpand | null;
   pendingAutoExpand: string | null;
@@ -28,6 +29,7 @@ interface CanvasStore {
   addConnectionEdge: (edge: CanvasEdge) => void;
   setSelectedNode: (id: string | null) => void;
   setExpandingNode: (id: string | null) => void;
+  setOpenExpandNodeId: (id: string | null) => void;
   setSidebarContent: (content: SidebarContent | null) => void;
   setPendingExpand: (action: PendingExpand | null) => void;
   setPendingAutoExpand: (nodeId: string | null) => void;
@@ -45,6 +47,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   edges: [],
   selectedNodeId: null,
   expandingNodeId: null,
+  openExpandNodeId: null,
   sidebarContent: null,
   pendingExpand: null,
   pendingAutoExpand: null,
@@ -99,6 +102,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
   setSelectedNode: (id) => set({ selectedNodeId: id }),
   setExpandingNode: (id) => set({ expandingNodeId: id }),
+  setOpenExpandNodeId: (id) => set({ openExpandNodeId: id }),
   setSidebarContent: (content) => set({ sidebarContent: content }),
   setPendingExpand: (action) => set({ pendingExpand: action }),
   setPendingAutoExpand: (nodeId) => set({ pendingAutoExpand: nodeId }),
@@ -117,6 +121,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       edges: [],
       selectedNodeId: null,
       expandingNodeId: null,
+      openExpandNodeId: null,
       sidebarContent: null,
       pendingExpand: null,
       pendingAutoExpand: null,
