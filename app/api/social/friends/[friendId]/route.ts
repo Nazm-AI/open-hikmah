@@ -50,7 +50,7 @@ export async function PATCH(
 
   const [updated] = await db
     .update(friendships)
-    .set({ status: action === "accept" ? "accepted" : "declined" })
+    .set({ status: action === "accept" ? "accepted" : "declined", updatedAt: new Date() })
     .where(eq(friendships.id, friendshipId))
     .returning();
 
