@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { SearchResult, VerseRef } from "@/types/quran";
 import { getSurahName } from "@/lib/surah-names";
+import sanitizeHtml from "sanitize-html";
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim();
@@ -51,7 +52,10 @@ export async function GET(req: NextRequest) {
           const [surahName, surahNameArabic] = getSurahName(surahNum);
 
           const rawSnippet = r.translations?.[0]?.text ?? "";
-          const snippet = rawSnippet.replace(/<[^>]*>/g, "").slice(0, 140);
+          const snippet = sanitizeHtml(rawSnippet, {
+            allowedTags: [],
+            allowedAttributes: {},
+          }).slice(0, 140);
 
           return {
             ref: r.verse_key as VerseRef,
