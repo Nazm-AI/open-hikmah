@@ -58,6 +58,7 @@ export default function SocialPage() {
     const ctrl = new AbortController();
     const { signal } = ctrl;
 
+    setLoadingFriends(true);
     fetch("/api/social/friends", {
       headers: { Authorization: `Bearer ${accessToken}` },
       signal,
@@ -67,6 +68,7 @@ export default function SocialPage() {
       .catch(() => {})
       .finally(() => setLoadingFriends(false));
 
+    setLoadingLeaderboard(true);
     fetch("/api/social/leaderboard", {
       headers: { Authorization: `Bearer ${accessToken}` },
       signal,
