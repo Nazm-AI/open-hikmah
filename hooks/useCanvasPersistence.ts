@@ -5,23 +5,19 @@ import { useCanvasStore, serializeCanvas, type SavedCanvas } from "@/store/canva
 
 const LS_KEY = "open-hikmah-canvas";
 
-function encode(canvas: SavedCanvas): string {
-  return btoa(unescape(encodeURIComponent(JSON.stringify(canvas))));
-}
-
-function decode(s: string): SavedCanvas | null {
-  try {
-    return JSON.parse(decodeURIComponent(escape(atob(s)))) as SavedCanvas;
-  } catch {
-    return null;
-  }
-}
-
-export function buildShareUrl(canvas: SavedCanvas): string {
+export async function buildShareUrl(canvas: SavedCanvas): Promise<string> {
+  const res = await fetch("/api/share", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(canvas),
+  });
+  if (!res.ok) throw new Error("Share failed");
+  const { id } = await res.json() as { id: string };
   const url = new URL(window.location.href);
   url.pathname = "/";
-  url.searchParams.delete("verse");
-  url.hash = `canvas=${encode(canvas)}`;
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("share", id);
   return url.toString();
 }
 
@@ -32,27 +28,7 @@ export function useCanvasPersistence() {
   const hydratedRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // On mount: restore from URL hash first, then localStorage
-  useEffect(() => {
-    if (hydratedRef.current) return;
-    hydratedRef.current = true;
-
-    // Check URL hash for shared canvas
-    const hash = window.location.hash;
-    const match = hash.match(/canvas=([^&]+)/);
-    if (match) {
-      const saved = decode(match[1]);
-      if (saved?.v === 1 && saved.nodes.length > 0) {
-        restoreCanvas(saved);
-        // Clean the hash from URL without reload
-        const url = new URL(window.location.href);
-        url.hash = "";
-        window.history.replaceState(null, "", url.toString());
-        return;
-      }
-    }
-
-    // Fall back to localStorage
+  function tryRestoreFromLocalStorage() {
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (raw) {
@@ -64,6 +40,38 @@ export function useCanvasPersistence() {
     } catch {
       // Corrupt localStorage — ignore
     }
+  }
+
+  // On mount: restore from ?share=<id> first, then localStorage
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+
+    const params = new URLSearchParams(window.location.search);
+    const shareId = params.get("share");
+
+    if (shareId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(shareId)) {
+      fetch(`/api/share/${shareId}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((saved: SavedCanvas | null) => {
+          if (saved?.v === 1 && saved.nodes.length > 0) {
+            restoreCanvas(saved);
+            // Only clean the URL once we've successfully restored — preserves the
+            // share link for retry if the fetch fails or returns invalid data.
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete("share");
+            window.history.replaceState(null, "", cleanUrl.toString());
+          } else {
+            tryRestoreFromLocalStorage();
+          }
+        })
+        .catch(() => {
+          tryRestoreFromLocalStorage();
+        });
+      return;
+    }
+
+    tryRestoreFromLocalStorage();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
