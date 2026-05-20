@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  if (!/^[a-f0-9]{10}$/.test(id)) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
