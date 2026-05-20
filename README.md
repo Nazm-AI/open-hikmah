@@ -38,29 +38,6 @@ An AI-powered Quran knowledge graph. Search any verse, drop it on an infinite ca
 
 ---
 
-## Self-Hosting
-
-The app runs as a Docker container. You need:
-
-- A PostgreSQL database
-- An [Anthropic API key](https://console.anthropic.com)
-- A Quran Foundation OAuth2 client (contact [Quran Foundation](https://quran.foundation) to request one)
-
-```bash
-git clone https://github.com/Nazm-AI/open-hikmah
-cd open-hikmah
-cp .env.example .env
-# Fill in every value — see .env.example for descriptions
-docker compose up -d
-npx drizzle-kit migrate   # run once after first start
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-The minimum required to get the AI canvas working is `ANTHROPIC_API_KEY`. The `QF_*` OAuth variables are only needed for user accounts, bookmarks, and social features.
-
----
-
 ## Local Development
 
 **Prerequisites:** Node 20+, PostgreSQL 16.
