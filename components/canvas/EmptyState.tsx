@@ -63,7 +63,7 @@ export function EmptyState({ onSearchOpen }: EmptyStateProps) {
             { color: "var(--color-contrast-edge)", label: "Contrast" },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-1.5">
-              <div className="w-3 h-px" style={{ background: item.color }} />
+              <div className="w-3 h-0.5 rounded-full" style={{ background: item.color }} />
               <span>{item.label}</span>
             </div>
           ))}

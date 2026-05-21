@@ -195,7 +195,7 @@ function CanvasInner() {
         </div>
       )}
 
-      {nodes.length > 0 && (
+      {edges.length > 0 && (
         <div
           className="absolute bottom-4 left-4 z-40 flex items-center gap-3 px-3 py-1.5 rounded-md pointer-events-none"
           style={{
@@ -210,7 +210,7 @@ function CanvasInner() {
             { color: "var(--color-contrast-edge)", label: "Contrast" },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-1.5">
-              <div className="w-4 h-px shrink-0" style={{ background: item.color }} />
+              <div className="w-4 h-0.5 rounded-full shrink-0" style={{ background: item.color }} />
               <span className="text-[10px] font-mono" style={{ color: "var(--color-text-muted)" }}>
                 {item.label}
               </span>
