@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Search, RotateCcw, LogIn, LogOut, Sparkles, Trophy, Share2, ListMusic, Heart, Flame } from "lucide-react";
+import { BookOpen, Search, RotateCcw, LogIn, LogOut, Sparkles, Trophy, Share2, ListMusic, Heart, Flame, Save, FolderOpen } from "lucide-react";
 import { useCanvasStore, serializeCanvas } from "@/store/canvas";
 import { useAuthStore } from "@/store/auth";
 import { useSocialStore } from "@/store/social";
@@ -19,6 +19,8 @@ interface HeaderProps {
 export function Header({ onSearchOpen }: HeaderProps) {
   const [copied, setCopied] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [workspaceSaved, setWorkspaceSaved] = useState(false);
+  const [workspaceSaving, setWorkspaceSaving] = useState(false);
 
   const reset = useCanvasStore((s) => s.reset);
   const nodes = useCanvasStore((s) => s.nodes);
@@ -77,6 +79,26 @@ export function Header({ onSearchOpen }: HeaderProps) {
       // Share API or clipboard failed — silent
     } finally {
       setSharing(false);
+    }
+  };
+
+  const handleSaveWorkspace = async () => {
+    if (workspaceSaving || !accessToken || nodeCount === 0) return;
+    setWorkspaceSaving(true);
+    try {
+      const date = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const name = `${nodeCount} verse${nodeCount === 1 ? "" : "s"} — ${date}`;
+      await fetch("/api/workspace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ name, data: serializeCanvas(nodes, edges), nodeCount }),
+      });
+      setWorkspaceSaved(true);
+      setTimeout(() => setWorkspaceSaved(false), 2000);
+    } catch {
+      // silent
+    } finally {
+      setWorkspaceSaving(false);
     }
   };
 
@@ -150,6 +172,22 @@ export function Header({ onSearchOpen }: HeaderProps) {
                 <ListMusic className="w-3.5 h-3.5" />
               </button>
 
+              {accessToken && (
+                <button
+                  onClick={handleSaveWorkspace}
+                  disabled={workspaceSaving}
+                  title={workspaceSaved ? "Saved!" : "Save canvas to account"}
+                  aria-label="Save canvas to account"
+                  className="w-7 h-7 rounded border flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                  style={{
+                    borderColor: workspaceSaved ? "var(--color-teal)" : "var(--color-border)",
+                    color: workspaceSaved ? "var(--color-teal)" : "var(--color-text-muted)",
+                  }}
+                >
+                  <Save className="w-3.5 h-3.5" />
+                </button>
+              )}
+
               <button
                 onClick={reset}
                 title="Clear canvas"
@@ -210,6 +248,16 @@ export function Header({ onSearchOpen }: HeaderProps) {
             >
               <Heart className="w-3.5 h-3.5" />
               {bookmarkCount > 0 && <span>{bookmarkCount}</span>}
+            </Link>
+          )}
+
+          {accessToken && (
+            <Link
+              href="/workspaces"
+              title="Saved workspaces"
+              className="w-7 h-7 rounded border flex items-center justify-center transition-colors border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-teal)] hover:text-[var(--color-teal)]"
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
             </Link>
           )}
 
