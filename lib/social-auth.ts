@@ -30,7 +30,9 @@ function decodeJwtSub(token: string): string | null {
       Buffer.from(parts[1], "base64url").toString("utf-8")
     ) as Record<string, unknown>;
     const sub = payload.sub ?? payload.user_id ?? payload.userId;
-    return typeof sub === "string" && sub ? sub : null;
+    if (sub === null || sub === undefined) return null;
+    const subStr = String(sub);
+    return subStr || null;
   } catch {
     return null;
   }
