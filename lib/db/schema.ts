@@ -117,6 +117,25 @@ export const sharedCanvases = pgTable("shared_canvases", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ─── Verse Notes ──────────────────────────────────────────────────────────────
+
+export const verseNotes = pgTable(
+  "verse_notes",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    verseRef: text("verse_ref").notNull(),
+    note: text("note").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("verse_notes_user_ref_idx").on(t.userId, t.verseRef),
+  ]
+);
+
 // ─── Exported types ───────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -125,3 +144,5 @@ export type Friendship = typeof friendships.$inferSelect;
 export type ActivityLogEntry = typeof activityLog.$inferSelect;
 export type Challenge = typeof challenges.$inferSelect;
 export type SharedCanvas = typeof sharedCanvases.$inferSelect;
+export type VerseNote = typeof verseNotes.$inferSelect;
+export type NewVerseNote = typeof verseNotes.$inferInsert;
