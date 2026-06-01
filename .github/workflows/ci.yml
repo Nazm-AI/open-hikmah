@@ -5,6 +5,11 @@ on:
     branches: ["**"]
   pull_request:
 
+# Least privilege: this workflow only reads the repo (checkout) and runs
+# tests/build — it never writes back to GitHub. Override per-job if needed.
+permissions:
+  contents: read
+
 jobs:
   lint-typecheck-test:
     name: Lint · Type-check · Test
