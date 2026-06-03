@@ -11,6 +11,8 @@ import type { Verse } from "@/types/quran";
 import { buildAuthUrl } from "@/lib/pkce";
 import { buildShareUrl } from "@/hooks/useCanvasPersistence";
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { Button, IconButton, Tooltip, buttonVariants, iconButtonVariants } from "@/components/ui";
 
 interface HeaderProps {
   onSearchOpen: () => void;
@@ -144,27 +146,14 @@ export function Header({ onSearchOpen }: HeaderProps) {
     window.location.href = url;
   };
 
-  const divider = (
-    <span
-      className="w-px h-4 mx-0.5 shrink-0"
-      style={{ background: "var(--color-border)" }}
-    />
-  );
+  const divider = <span className="w-px h-5 mx-0.5 shrink-0 bg-border" />;
 
   return (
-    <header
-      className="flex items-center justify-between px-4 h-12 shrink-0"
-      style={{
-        background: "var(--color-surface)",
-        borderBottom: "1px solid var(--color-border)",
-      }}
-    >
+    <header className="flex items-center justify-between px-4 h-14 shrink-0 bg-surface border-b border-border">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-        <BookOpen className="w-4 h-4" style={{ color: "var(--color-gold)" }} />
-        <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-          Open Hikmah
-        </span>
+        <BookOpen className="w-4 h-4 text-gold" />
+        <span className="text-sm font-medium text-text-primary">Open Hikmah</span>
       </Link>
 
       {/* Right controls — three groups separated by dividers */}
@@ -174,61 +163,49 @@ export function Header({ onSearchOpen }: HeaderProps) {
         {nodeCount > 0 && (
           <>
             <div className="flex items-center gap-1.5">
-              <button
-                onClick={handleShare}
-                disabled={sharing}
-                title={sharing ? "Generating link…" : "Copy shareable link"}
-                aria-label="Copy shareable canvas link"
-                className="w-7 h-7 rounded border flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
-                style={{
-                  borderColor: copied ? "var(--color-teal)" : "var(--color-border)",
-                  color: copied ? "var(--color-teal)" : "var(--color-text-muted)",
-                }}
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip label={sharing ? "Generating link…" : copied ? "Copied!" : "Copy shareable link"}>
+                <IconButton
+                  onClick={handleShare}
+                  disabled={sharing}
+                  aria-label="Copy shareable canvas link"
+                  className={cn("disabled:cursor-wait", copied && "border-teal text-teal")}
+                >
+                  <Share2 />
+                </IconButton>
+              </Tooltip>
 
-              <button
-                onClick={handlePlayGraph}
-                title={audioCurrentRef ? "Stop playback" : "Play all verses in Quran order"}
-                aria-label={audioCurrentRef ? "Stop audio playback" : "Play Graph — recite all verses"}
-                className="w-7 h-7 rounded border flex items-center justify-center transition-colors cursor-pointer"
-                style={{
-                  borderColor: audioCurrentRef ? "var(--color-teal)" : "var(--color-border)",
-                  color: audioCurrentRef ? "var(--color-teal)" : "var(--color-text-muted)",
-                }}
-              >
-                <ListMusic className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip label={audioCurrentRef ? "Stop playback" : "Play all verses in Quran order"}>
+                <IconButton
+                  onClick={handlePlayGraph}
+                  aria-label={audioCurrentRef ? "Stop audio playback" : "Play Graph — recite all verses"}
+                  className={cn(audioCurrentRef && "border-teal text-teal")}
+                >
+                  <ListMusic />
+                </IconButton>
+              </Tooltip>
 
               {accessToken && (
-                <button
-                  onClick={handleSaveWorkspace}
-                  disabled={workspaceSaving}
-                  title={workspaceSaved ? "Saved!" : workspaceSaveError ? "Save failed — try again" : "Save canvas to account"}
-                  aria-label="Save canvas to account"
-                  className="w-7 h-7 rounded border flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
-                  style={{
-                    borderColor: workspaceSaved ? "var(--color-teal)" : workspaceSaveError ? "#ef4444" : "var(--color-border)",
-                    color: workspaceSaved ? "var(--color-teal)" : workspaceSaveError ? "#ef4444" : "var(--color-text-muted)",
-                  }}
-                >
-                  <Save className="w-3.5 h-3.5" />
-                </button>
+                <Tooltip label={workspaceSaved ? "Saved!" : workspaceSaveError ? "Save failed — try again" : "Save canvas to account"}>
+                  <IconButton
+                    onClick={handleSaveWorkspace}
+                    disabled={workspaceSaving}
+                    aria-label="Save canvas to account"
+                    className={cn(
+                      "disabled:cursor-wait",
+                      workspaceSaved && "border-teal text-teal",
+                      workspaceSaveError && "border-error text-error"
+                    )}
+                  >
+                    <Save />
+                  </IconButton>
+                </Tooltip>
               )}
 
-              <button
-                onClick={reset}
-                title="Clear canvas"
-                aria-label="Clear all verses from canvas"
-                className="w-7 h-7 rounded border flex items-center justify-center transition-colors cursor-pointer hover:border-red-700 hover:text-red-400"
-                style={{
-                  borderColor: "var(--color-border)",
-                  color: "var(--color-text-muted)",
-                }}
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip label="Clear canvas">
+                <IconButton tone="danger" onClick={reset} aria-label="Clear all verses from canvas">
+                  <RotateCcw />
+                </IconButton>
+              </Tooltip>
             </div>
 
             {divider}
@@ -237,22 +214,17 @@ export function Header({ onSearchOpen }: HeaderProps) {
 
         {/* Group 2: Navigation */}
         <div className="flex items-center gap-1.5">
-          <Link
-            href="/names"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border text-xs transition-colors border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)] hover:text-[var(--color-gold)]"
-          >
+          <Link href="/names" className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}>
             <Sparkles className="w-3.5 h-3.5" />
             <span>99 Names</span>
           </Link>
 
-          <button
-            onClick={onSearchOpen}
-            title="Search ⌘K"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border text-xs transition-colors cursor-pointer border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)] hover:text-[var(--color-gold)]"
-          >
-            <Search className="w-3.5 h-3.5" />
-            <span>Search</span>
-          </button>
+          <Tooltip label="Search ⌘K">
+            <Button variant="secondary" size="sm" onClick={onSearchOpen}>
+              <Search className="w-3.5 h-3.5" />
+              <span>Search</span>
+            </Button>
+          </Tooltip>
         </div>
 
         {divider}
@@ -260,92 +232,76 @@ export function Header({ onSearchOpen }: HeaderProps) {
         {/* Group 3: Identity & social */}
         <div className="flex items-center gap-1.5">
           {accessToken && (
-            <Link
-              href="/social"
-              title="Friends & Leaderboard"
-              className="relative w-7 h-7 rounded border flex items-center justify-center transition-colors border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-teal)] hover:text-[var(--color-teal)]"
-            >
-              <Trophy className="w-3.5 h-3.5" />
-              {pendingFriendCount > 0 && (
-                <span
-                  className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[9px] font-bold px-0.5"
-                  style={{ background: "var(--color-gold)", color: "var(--color-bg)" }}
-                >
-                  {pendingFriendCount > 9 ? "9+" : pendingFriendCount}
-                </span>
-              )}
-            </Link>
+            <Tooltip label="Friends & Leaderboard">
+              <Link
+                href="/social"
+                aria-label="Friends & Leaderboard"
+                className={cn(iconButtonVariants({ tone: "teal" }), "relative")}
+              >
+                <Trophy />
+                {pendingFriendCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[9px] font-bold px-0.5 bg-gold text-bg">
+                    {pendingFriendCount > 9 ? "9+" : pendingFriendCount}
+                  </span>
+                )}
+              </Link>
+            </Tooltip>
           )}
 
           {accessToken && (
-            <Link
-              href="/bookmarks"
-              title="Bookmarks"
-              className="flex items-center gap-1 px-2 py-1.5 rounded border text-xs transition-colors border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)] hover:text-[var(--color-gold)]"
-            >
-              <Heart className="w-3.5 h-3.5" />
-              {bookmarkCount > 0 && <span>{bookmarkCount}</span>}
-            </Link>
+            <Tooltip label="Bookmarks">
+              <Link
+                href="/bookmarks"
+                aria-label="Bookmarks"
+                className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "gap-1.5")}
+              >
+                <Heart className="w-3.5 h-3.5" />
+                {bookmarkCount > 0 && <span>{bookmarkCount}</span>}
+              </Link>
+            </Tooltip>
           )}
 
           {accessToken && (
-            <Link
-              href="/workspaces"
-              title="Saved workspaces"
-              className="w-7 h-7 rounded border flex items-center justify-center transition-colors border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-teal)] hover:text-[var(--color-teal)]"
-            >
-              <FolderOpen className="w-3.5 h-3.5" />
-            </Link>
+            <Tooltip label="Saved workspaces">
+              <Link
+                href="/workspaces"
+                aria-label="Saved workspaces"
+                className={cn(iconButtonVariants({ tone: "teal" }))}
+              >
+                <FolderOpen />
+              </Link>
+            </Tooltip>
           )}
 
           {accessToken ? (
             <>
               {/* Username pill with streak inlined */}
-              <div
-                className="flex items-center gap-1.5 px-2 py-1 rounded border text-xs"
-                style={{
-                  borderColor: "var(--color-border)",
-                  background: "var(--color-surface-raised)",
-                  color: "var(--color-text-secondary)",
-                }}
-              >
-                <span
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                  style={{ background: "var(--color-teal)", color: "var(--color-bg)" }}
-                >
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border bg-surface-raised text-xs text-text-secondary">
+                <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 bg-teal text-bg">
                   {(username ?? "?")[0].toUpperCase()}
                 </span>
                 {username && (
-                  <span className="max-w-[96px] truncate" style={{ color: "var(--color-text-primary)" }}>
-                    {username}
-                  </span>
+                  <span className="max-w-[96px] truncate text-text-primary">{username}</span>
                 )}
                 {streak > 0 && (
                   <>
-                    <Flame className="w-3 h-3 shrink-0" fill="currentColor" style={{ color: "var(--color-gold)" }} />
-                    <span style={{ color: "var(--color-gold)" }}>{streak}</span>
+                    <Flame className="w-3 h-3 shrink-0 text-gold" fill="currentColor" />
+                    <span className="text-gold">{streak}</span>
                   </>
                 )}
               </div>
 
-              <button
-                onClick={handleSignOut}
-                title="Sign out"
-                aria-label="Sign out"
-                className="w-7 h-7 rounded border flex items-center justify-center transition-colors cursor-pointer hover:border-[var(--color-text-secondary)] hover:text-[var(--color-text-secondary)]"
-                style={{ borderColor: "var(--color-border)", color: "var(--color-text-muted)" }}
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip label="Sign out">
+                <IconButton onClick={handleSignOut} aria-label="Sign out">
+                  <LogOut />
+                </IconButton>
+              </Tooltip>
             </>
           ) : (
-            <button
-              onClick={handleSignIn}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border text-xs transition-colors cursor-pointer border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-teal)] hover:text-[var(--color-teal)]"
-            >
+            <Button variant="secondary" size="sm" onClick={handleSignIn}>
               <LogIn className="w-3.5 h-3.5" />
               <span>Sign in</span>
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -17,6 +17,8 @@ const iconButton = cva(
           "border-border text-text-secondary hover:bg-white/5 hover:text-text-primary active:bg-white/10",
         gold: "border-border text-text-secondary hover:border-gold-muted hover:bg-gold/10 hover:text-gold",
         teal: "border-border text-text-secondary hover:border-teal hover:bg-teal/15 hover:text-teal",
+        danger:
+          "border-border text-text-secondary hover:border-error/40 hover:bg-error/10 hover:text-error",
       },
       size: {
         sm: "h-8 w-8 [&_svg]:size-4",
@@ -37,3 +39,5 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   )
 );
 IconButton.displayName = "IconButton";
+
+export { iconButton as iconButtonVariants };

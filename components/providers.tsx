@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { MiniPlayer } from "@/components/audio/MiniPlayer";
+import { TooltipProvider } from "@/components/ui";
 import { useAuthStore } from "@/store/auth";
 import { useSocialStore } from "@/store/social";
 
@@ -61,9 +62,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SessionRestorer />
-      {children}
-      <MiniPlayer />
+      <TooltipProvider delayDuration={300}>
+        <SessionRestorer />
+        {children}
+        <MiniPlayer />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
