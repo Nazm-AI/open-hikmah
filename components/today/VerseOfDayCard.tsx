@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Card, IconButton, Tooltip, ReflectionNote, buttonVariants } from "@/components/ui";
 import { useAudioStore } from "@/store/audio";
 import { useAuthStore } from "@/store/auth";
+import { useCopyFeedback } from "@/hooks/useCopyFeedback";
 
 /**
  * The full Verse of the Day card (design.md §5.1): a floating, shareable surface
@@ -35,7 +36,7 @@ export function VerseOfDayCard({
   const toggleBookmark = useAuthStore((s) => s.toggleBookmark);
   const bookmarkedInStore = useAuthStore((s) => s.isBookmarked(verse.ref));
 
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyFeedback();
   // The auth store rehydrates bookmarks from localStorage on the client, which
   // the server can't know. Gate the bookmark visual on mount so the first client
   // render matches the server HTML (unbookmarked), avoiding a hydration mismatch.
@@ -52,14 +53,8 @@ export function VerseOfDayCard({
     else playVerse({ ref: verse.ref, surah: verse.surah, ayah: verse.ayah, surahName: verse.surahName });
   };
 
-  const handleShare = async () => {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/today`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // clipboard unavailable — silent, mirrors Header.handleShare
-    }
+  const handleShare = () => {
+    void copy(`${window.location.origin}/today`);
   };
 
   return (

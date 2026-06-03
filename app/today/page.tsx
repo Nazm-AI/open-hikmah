@@ -9,8 +9,11 @@ export const metadata: Metadata = {
     "A daily verse from the Qur'an to reflect on — listen, bookmark, or open it on the connection canvas.",
 };
 
-// The verse is deterministic per UTC day, so the page can be cached for an hour.
-export const revalidate = 3600;
+// Render per request so the verse always matches the current UTC day. A fixed
+// revalidate window wouldn't align with the midnight-UTC rollover and could
+// serve yesterday's verse for up to that window; the day pick is cheap and the
+// underlying verse fetch is cached upstream, so dynamic rendering is fine here.
+export const dynamic = "force-dynamic";
 
 export default async function TodayPage() {
   const verse = await getVerseOfDay().catch(() => null);
