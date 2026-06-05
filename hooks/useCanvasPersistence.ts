@@ -3,7 +3,10 @@
 import { useEffect, useRef } from "react";
 import { useCanvasStore, serializeCanvas, type SavedCanvas } from "@/store/canvas";
 
-const LS_KEY = "open-hikmah-canvas";
+/** localStorage key for the in-progress canvas. Exported so the home screen can
+ *  surface a "continue where you left off" entry without re-deriving the key. */
+export const CANVAS_STORAGE_KEY = "open-hikmah-canvas";
+const LS_KEY = CANVAS_STORAGE_KEY;
 
 export async function buildShareUrl(canvas: SavedCanvas): Promise<string> {
   const res = await fetch("/api/share", {
