@@ -157,11 +157,7 @@ export function CreateChallengeForm({ friends, loadingFriends, onCreated }: Prop
           Challenge
         </button>
 
-        {error && (
-          <p className="text-xs" style={{ color: "var(--color-error, #ef4444)" }}>
-            {error}
-          </p>
-        )}
+        {error && <p className="text-xs text-error">{error}</p>}
         {success && (
           <p className="text-xs" style={{ color: "var(--color-teal)" }}>
             {success}
