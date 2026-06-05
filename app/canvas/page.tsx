@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { Header } from "@/components/layout/Header";
 import { SearchDialog } from "@/components/search/SearchDialog";
 import { EmptyState } from "@/components/canvas/EmptyState";
+import { CanvasTour } from "@/components/canvas/CanvasTour";
 import { ContextSidebar } from "@/components/layout/ContextSidebar";
 import { useCanvasStore } from "@/store/canvas";
 import { findFreeSlot } from "@/lib/canvas-layout";
@@ -98,6 +99,7 @@ export default function CanvasPage() {
         )}
         <HikmahCanvas />
         <ContextSidebar />
+        <CanvasTour />
       </main>
 
       <SearchDialog
