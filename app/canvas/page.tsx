@@ -16,10 +16,7 @@ const HikmahCanvas = dynamic(
     ssr: false,
     loading: () => (
       <div className="w-full h-full flex items-center justify-center">
-        <div
-          className="text-xs font-mono tracking-wider uppercase"
-          style={{ color: "var(--color-text-muted)" }}
-        >
+        <div className="text-xs font-mono tracking-wider uppercase text-text-muted">
           Loading canvas…
         </div>
       </div>
@@ -83,7 +80,7 @@ export default function CanvasPage() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden" style={{ background: "var(--color-bg)" }}>
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-bg">
       <Suspense>
         <VerseLoader />
       </Suspense>
