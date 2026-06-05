@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { Search, BookOpen } from "lucide-react";
+import { JOURNEYS } from "@/lib/journeys";
 
 interface EmptyStateProps {
   onSearchOpen: () => void;
@@ -9,7 +11,7 @@ interface EmptyStateProps {
 export function EmptyState({ onSearchOpen }: EmptyStateProps) {
   return (
     <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-      <div className="pointer-events-auto max-w-xs text-center">
+      <div className="pointer-events-auto max-w-sm text-center">
         <div className="mx-auto mb-5 flex h-10 w-10 items-center justify-center rounded-md border border-gold/20 bg-gold/[0.07]">
           <BookOpen className="h-5 w-5 text-gold" />
         </div>
@@ -27,6 +29,24 @@ export function EmptyState({ onSearchOpen }: EmptyStateProps) {
           Search verses
           <kbd className="rounded bg-gold/10 px-1 font-mono text-[10px] text-text-muted">⌘K</kbd>
         </button>
+
+        {/* One-tap journeys — start a beautiful canvas with zero typing. */}
+        <div className="mt-6">
+          <p className="mb-2.5 text-[11px] uppercase tracking-[0.16em] text-text-muted">
+            Or begin with
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {JOURNEYS.map((j) => (
+              <Link
+                key={j.ref}
+                href={`/canvas?verse=${j.ref}`}
+                className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text-secondary transition-[color,border-color] duration-[120ms] hover:border-gold-muted hover:text-gold"
+              >
+                {j.label}
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

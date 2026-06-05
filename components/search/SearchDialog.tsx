@@ -14,6 +14,11 @@ interface SearchDialogProps {
   onClose: () => void;
 }
 
+// Keyword → Quran.com text search. Meaning → semantic (embedding) search over the
+// local corpus. A bare reference like 2:255 short-circuits to a direct preview in
+// either mode.
+type SearchMode = "keyword" | "meaning";
+
 const SEED_VERSES: Array<{ ref: string; label: string }> = [
   { ref: "1:1", label: "Al-Fatiha — Opening" },
   { ref: "2:255", label: "Ayat al-Kursi" },
@@ -30,6 +35,8 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [previewError, setPreviewError] = useState(false);
+  const [mode, setMode] = useState<SearchMode>("keyword");
+  const [rateLimited, setRateLimited] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -63,22 +70,35 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
     }
   }, []);
 
-  const fetchSearch = useCallback(async (q: string, signal: AbortSignal) => {
-    setIsSearching(true);
-    setSearchResults([]);
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal });
-      if (!res.ok) throw new Error();
-      const results: SearchResult[] = await res.json();
-      setSearchResults(results);
-    } catch (err) {
-      if ((err as Error).name !== "AbortError") {
-        setSearchResults([]);
+  const fetchSearch = useCallback(
+    async (q: string, signal: AbortSignal, searchMode: SearchMode) => {
+      setIsSearching(true);
+      setSearchResults([]);
+      setRateLimited(false);
+      try {
+        const url = `/api/search?q=${encodeURIComponent(q)}${
+          searchMode === "meaning" ? "&mode=meaning" : ""
+        }`;
+        const res = await fetch(url, { signal });
+        // The semantic path is rate-limited per IP (it calls a paid embedding
+        // provider); surface that distinctly rather than as "no results".
+        if (res.status === 429) {
+          setRateLimited(true);
+          return;
+        }
+        if (!res.ok) throw new Error();
+        const results: SearchResult[] = await res.json();
+        setSearchResults(results);
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          setSearchResults([]);
+        }
+      } finally {
+        if (!signal.aborted) setIsSearching(false);
       }
-    } finally {
-      if (!signal.aborted) setIsSearching(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -93,13 +113,13 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
     if (/^\d+:\d+$/.test(trimmed)) {
       debounceRef.current = setTimeout(() => fetchPreview(trimmed, controller.signal), 250);
     } else {
-      debounceRef.current = setTimeout(() => fetchSearch(trimmed, controller.signal), 420);
+      debounceRef.current = setTimeout(() => fetchSearch(trimmed, controller.signal, mode), 420);
     }
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query, fetchPreview, fetchSearch]);
+  }, [query, mode, fetchPreview, fetchSearch]);
 
   const mapConnections = useCallback(
     (verse: Verse) => {
@@ -173,6 +193,8 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
           setPreviewError(false);
           setLoading(false);
           setIsSearching(false);
+          setRateLimited(false);
+          setMode("keyword");
           onClose();
         }
       }}
@@ -206,9 +228,14 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
                     setPreviewError(false);
                     setLoading(false);
                     setIsSearching(false);
+                    setRateLimited(false);
                   }
                 }}
-                placeholder="Search topics, or enter a ref like 2:255…"
+                placeholder={
+                  mode === "meaning"
+                    ? "Describe a meaning, e.g. trusting God in hardship…"
+                    : "Search topics, or enter a ref like 2:255…"
+                }
                 className="flex-1 bg-transparent text-sm outline-none text-text-primary placeholder:text-text-muted"
               />
               <button
@@ -219,6 +246,31 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
               >
                 <X className="w-4 h-4" />
               </button>
+            </div>
+
+            {/* Mode toggle — keyword (Quran.com text) vs by-meaning (semantic) */}
+            <div className="flex items-center gap-1.5 border-b border-border px-3 py-2">
+              {(["keyword", "meaning"] as SearchMode[]).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  aria-pressed={mode === m}
+                  className={cn(
+                    "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                    mode === m
+                      ? "bg-teal/15 text-teal"
+                      : "text-text-muted hover:text-text-secondary"
+                  )}
+                >
+                  {m === "keyword" ? "Keyword" : "By meaning"}
+                </button>
+              ))}
+              {mode === "meaning" && (
+                <span className="ml-auto text-[10px] text-text-muted">
+                  semantic · finds related ideas
+                </span>
+              )}
             </div>
 
             {/* Content area */}
@@ -265,9 +317,21 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
                 </div>
               )}
 
-              {!showSeedVerses && !showPreview && !showResults && !busy && !previewError && (
+              {rateLimited && !busy && (
+                <div className="px-4 py-6 text-center">
+                  <p className="text-sm text-text-muted">
+                    Too many searches — please wait a moment and try again.
+                  </p>
+                </div>
+              )}
+
+              {!showSeedVerses && !showPreview && !showResults && !busy && !previewError && !rateLimited && (
                 <div className="px-4 py-8 text-center">
-                  <p className="text-sm text-text-muted">No results found</p>
+                  <p className="text-sm text-text-muted">
+                    {mode === "meaning"
+                      ? "No verses matched that meaning."
+                      : "No results found"}
+                  </p>
                 </div>
               )}
 
