@@ -212,7 +212,7 @@ export function SearchDialog({ open, onClose }: SearchDialogProps) {
           aria-describedby={undefined}
         >
           <Dialog.Title className="sr-only">Search Quran Verses</Dialog.Title>
-          <div className="rounded-md border border-border overflow-hidden bg-surface shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+          <div className="rounded-md border border-border overflow-hidden bg-surface shadow-md">
             {/* Input bar */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
               {busy ? (
