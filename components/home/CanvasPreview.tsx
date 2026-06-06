@@ -45,9 +45,9 @@ interface PreviewEdge {
   ly: number;
 }
 
-const ROOT = { x: 25, y: 50 };
-const N_RAHEEM = { x: 75, y: 22 };
-const N_RAHMAN = { x: 75, y: 78 };
+const ROOT = { x: 20, y: 50 };
+const N_RAHEEM = { x: 80, y: 22 };
+const N_RAHMAN = { x: 80, y: 78 };
 
 const NODES: PreviewNode[] = [
   {
@@ -77,8 +77,8 @@ const NODES: PreviewNode[] = [
 ];
 
 const EDGES: PreviewEdge[] = [
-  { kind: "root", label: "Shares Ar-Rahman & Ar-Raheem", from: ROOT, to: N_RAHEEM, lx: 50, ly: 35 },
-  { kind: "thematic", label: "Both name Ar-Rahman", from: ROOT, to: N_RAHMAN, lx: 49, ly: 65 },
+  { kind: "root", label: "Shared divine names", from: ROOT, to: N_RAHEEM, lx: 50, ly: 36 },
+  { kind: "thematic", label: "Both name Ar-Rahman", from: ROOT, to: N_RAHMAN, lx: 50, ly: 64 },
 ];
 
 const EDGE_COLOR: Record<EdgeKind, string> = {
@@ -111,7 +111,7 @@ function IconChip({ children, tone }: { children: React.ReactNode; tone?: "gold"
 function PreviewCard({ node, delay }: { node: PreviewNode; delay: string }) {
   return (
     <div
-      className="absolute w-[158px] -translate-x-1/2 -translate-y-1/2 animate-[floatNode_7s_ease-in-out_infinite] rounded-lg border border-border bg-surface-raised shadow-md sm:w-[188px]"
+      className="absolute w-[124px] -translate-x-1/2 -translate-y-1/2 animate-[floatNode_7s_ease-in-out_infinite] rounded-lg border border-border bg-surface-raised shadow-md sm:w-[162px]"
       style={{ left: `${node.x}%`, top: `${node.y}%`, animationDelay: delay }}
     >
       <div className="space-y-2 p-2.5">
@@ -207,7 +207,7 @@ export function CanvasPreview({ className }: { className?: string }) {
       {EDGES.map((e, i) => (
         <span
           key={i}
-          className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border bg-surface-raised px-2.5 py-1 font-mono text-[10px] leading-none shadow-sm"
+          className="absolute max-w-[88px] -translate-x-1/2 -translate-y-1/2 whitespace-normal rounded-full border bg-surface-raised px-2.5 py-1 text-center font-mono text-[10px] leading-tight shadow-sm sm:max-w-none sm:whitespace-nowrap"
           style={{ left: `${e.lx}%`, top: `${e.ly}%`, color: EDGE_COLOR[e.kind], borderColor: EDGE_COLOR[e.kind] }}
         >
           {e.label}
