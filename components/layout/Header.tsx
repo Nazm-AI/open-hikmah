@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, RotateCcw, LogIn, LogOut, Sparkles, Trophy, Share2, ListMusic, Heart, Flame, Save, FolderOpen, Menu } from "lucide-react";
+import { Search, RotateCcw, LogIn, LogOut, Sparkles, Trophy, Share2, ListMusic, Heart, Flame, Save, FolderOpen, Menu, Loader2 } from "lucide-react";
 import { useCanvasStore, serializeCanvas } from "@/store/canvas";
 import { useAuthStore } from "@/store/auth";
 import { useSocialStore } from "@/store/social";
@@ -61,6 +61,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
   const [workspaceSaving, setWorkspaceSaving] = useState(false);
   const [workspaceSaveError, setWorkspaceSaveError] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const reset = useCanvasStore((s) => s.reset);
@@ -192,6 +193,8 @@ export function Header({ onSearchOpen }: HeaderProps) {
   };
 
   const handleSignIn = async () => {
+    if (signingIn) return;
+    setSigningIn(true);
     const { url, codeVerifier, state, nonce } = await buildAuthUrl();
     sessionStorage.setItem("pkce_code_verifier", codeVerifier);
     sessionStorage.setItem("pkce_state", state);
@@ -397,9 +400,11 @@ export function Header({ onSearchOpen }: HeaderProps) {
               ) : (
                 <button
                   onClick={() => { setMenuOpen(false); handleSignIn(); }}
-                  className={cn(mobileMenuItem, "justify-center bg-gold text-bg font-semibold [&_svg]:text-bg")}
+                  disabled={signingIn}
+                  className={cn(mobileMenuItem, "justify-center bg-gold text-bg font-semibold [&_svg]:text-bg disabled:opacity-60")}
                 >
-                  <LogIn /> Sign in
+                  {signingIn ? <Loader2 className="animate-spin" /> : <LogIn />}
+                  {signingIn ? "Signing in…" : "Sign in"}
                 </button>
               )}
             </div>

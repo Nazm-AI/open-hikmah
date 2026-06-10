@@ -2,20 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Flame, Award, Heart, FolderOpen, Trophy, LogOut, LogIn, ChevronDown } from "lucide-react";
+import { Flame, Award, Heart, FolderOpen, Trophy, LogOut, LogIn, ChevronDown, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { useSocialStore } from "@/store/social";
 import { buildAuthUrl } from "@/lib/pkce";
 import { cn } from "@/lib/utils";
 
-/**
- * The identity control shared by the canvas header and the landing header.
- * Signed out → a gold "Sign in" CTA. Signed in → a refined avatar pill that
- * opens a full account card: profile + streak stats + quick links + sign out.
- * On narrow screens the trigger collapses to just the avatar so it never crowds.
- */
 export function AccountMenu() {
   const accessToken = useAuthStore((s) => s.accessToken);
+  const isSessionLoading = useAuthStore((s) => s.isSessionLoading);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const bookmarkCount = useAuthStore((s) => s.bookmarks.length);
   const username = useSocialStore((s) => s.username);
@@ -24,9 +19,9 @@ export function AccountMenu() {
   const pendingFriendCount = useSocialStore((s) => s.pendingFriendCount);
 
   const [open, setOpen] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close on outside-click or Escape.
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
@@ -44,6 +39,8 @@ export function AccountMenu() {
   }, [open]);
 
   const signIn = async () => {
+    if (signingIn) return;
+    setSigningIn(true);
     const { url, codeVerifier, state, nonce } = await buildAuthUrl();
     sessionStorage.setItem("pkce_code_verifier", codeVerifier);
     sessionStorage.setItem("pkce_state", state);
@@ -57,14 +54,27 @@ export function AccountMenu() {
     clearAuth();
   };
 
+  // While session is restoring, show a neutral skeleton pill so signed-in users
+  // never see the "Sign in" button flash before the token is available.
+  if (isSessionLoading && !accessToken) {
+    return (
+      <div className="h-[38px] w-[110px] animate-pulse rounded-full border border-border bg-surface-raised" />
+    );
+  }
+
   if (!accessToken) {
     return (
       <button
         onClick={signIn}
-        className="inline-flex items-center gap-1.5 rounded-md border border-gold px-3.5 py-1.5 text-[13px] font-semibold text-gold transition-colors duration-[120ms] hover:bg-gold/10"
+        disabled={signingIn}
+        className="inline-flex items-center gap-1.5 rounded-md border border-gold px-3.5 py-1.5 text-[13px] font-semibold text-gold transition-colors duration-[120ms] hover:bg-gold/10 disabled:opacity-60"
       >
-        <LogIn className="size-3.5" />
-        Sign in
+        {signingIn ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          <LogIn className="size-3.5" />
+        )}
+        {signingIn ? "Signing in…" : "Sign in"}
       </button>
     );
   }
@@ -75,7 +85,6 @@ export function AccountMenu() {
 
   return (
     <div ref={ref} className="relative">
-      {/* Trigger — refined pill (collapses to avatar only on mobile) */}
       <button
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
@@ -110,7 +119,6 @@ export function AccountMenu() {
           role="menu"
           className="absolute right-0 top-[calc(100%+8px)] z-50 w-[268px] overflow-hidden rounded-2xl border border-border bg-surface-overlay shadow-floating"
         >
-          {/* Profile header — a soft gold→teal wash derived from palette tokens. */}
           <div
             className="flex items-center gap-3 p-4"
             style={{
@@ -131,7 +139,6 @@ export function AccountMenu() {
             </div>
           </div>
 
-          {/* Streak stats */}
           <div className="flex gap-2 px-4 pb-3.5">
             <div className="flex-1 rounded-[10px] border border-border bg-surface px-2.5 py-2">
               <div className="flex items-center gap-1.5">
@@ -151,7 +158,6 @@ export function AccountMenu() {
 
           <div className="h-px bg-border" />
 
-          {/* Quick links */}
           <div className="p-1.5">
             <Link href="/bookmarks" onClick={() => setOpen(false)} className={linkRow}>
               <Heart /> Bookmarks
@@ -174,7 +180,6 @@ export function AccountMenu() {
 
           <div className="h-px bg-border" />
 
-          {/* Sign out */}
           <div className="p-1.5">
             <button
               onClick={signOut}

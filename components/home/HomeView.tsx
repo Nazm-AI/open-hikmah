@@ -3,15 +3,19 @@
 import { useAuthStore } from "@/store/auth";
 import { MarketingHero } from "./MarketingHero";
 import { PersonalHome } from "./PersonalHome";
+import { AuthLoadingSkeleton } from "./AuthLoadingSkeleton";
 import type { Verse } from "@/types/quran";
 
-/**
- * Adaptive home. Signed-out (and the SSR/first-paint default, since the access
- * token is restored client-side) shows the marketing hero; once a session is
- * present it swaps to the personal home. The Verse of the Day is fetched on the
- * server and threaded through both so neither has to wait on it.
- */
 export function HomeView({ verse }: { verse: Verse | null }) {
   const accessToken = useAuthStore((s) => s.accessToken);
+  const isSessionLoading = useAuthStore((s) => s.isSessionLoading);
+
+  // While the session is restoring, show a skeleton that matches PersonalHome's
+  // layout. Without this, signed-in users briefly see the MarketingHero on every
+  // reload, which also briefly exposes the "Sign in" button to signed-in users.
+  if (isSessionLoading && !accessToken) {
+    return <AuthLoadingSkeleton />;
+  }
+
   return accessToken ? <PersonalHome verse={verse} /> : <MarketingHero verse={verse} />;
 }
