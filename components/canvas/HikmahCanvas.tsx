@@ -20,7 +20,7 @@ import { CanvasToolbar } from "./CanvasToolbar";
 import { useCanvasStore } from "@/store/canvas";
 import { useActivityTracker } from "@/hooks/useActivityTracker";
 import { useCanvasPersistence } from "@/hooks/useCanvasPersistence";
-import { findFreeSlot } from "@/lib/canvas-layout";
+import { findFreeSlot, NODE_WIDTH, NODE_HEIGHT } from "@/lib/canvas-layout";
 import type { ConnectionResult, Verse } from "@/types/quran";
 
 const nodeTypes = { verse: VerseNode };
@@ -109,17 +109,21 @@ function CanvasInner() {
           // (including siblings added moments ago in this same expansion).
           const target = radialPos(sourcePos, i, connections.length);
           const state = useCanvasStore.getState();
-          const nodePositions = state.nodes.map((n) => n.position);
-          // Also treat each edge's midpoint as an obstacle so new nodes don't
-          // land on top of the AI explanation labels rendered at edge midpoints.
-          const edgeMidpoints = state.edges.flatMap((e) => {
+          const existing = state.nodes.map((n) => n.position);
+          // Edge labels (AI explanation pills, ~120×22px) render at edge midpoints.
+          // Treat them as slim obstacles so new nodes avoid overlapping them without
+          // being pushed as far as a full node would require.
+          const labelObstacles = state.edges.flatMap((e) => {
             const src = state.nodes.find((n) => n.id === e.source);
             const tgt = state.nodes.find((n) => n.id === e.target);
             if (!src || !tgt) return [];
-            return [{ x: (src.position.x + tgt.position.x) / 2, y: (src.position.y + tgt.position.y) / 2 }];
+            return [{
+              pos: { x: (src.position.x + tgt.position.x) / 2, y: (src.position.y + tgt.position.y) / 2 },
+              w: NODE_WIDTH / 2 + 60,   // half-node + half-label width
+              h: NODE_HEIGHT / 2 + 16,  // half-node + half-label height
+            }];
           });
-          const existing = [...nodePositions, ...edgeMidpoints];
-          const pos = findFreeSlot(existing, target);
+          const pos = findFreeSlot(existing, target, { labelObstacles });
           const newId = addVerseNode(conn as unknown as Verse, pos);
 
           addConnectionEdge({
