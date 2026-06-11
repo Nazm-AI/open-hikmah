@@ -110,6 +110,7 @@ interface CanvasStore {
   getNodeById: (id: string) => Node | undefined;
   reset: () => void;
   restoreCanvas: (saved: SavedCanvas) => void;
+  appendWorkspace: (saved: SavedCanvas) => void;
 }
 
 let nodeIdCounter = 0;
@@ -221,5 +222,54 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       pendingExpand: null,
       pendingAutoExpand: null,
     });
+  },
+
+  appendWorkspace: (saved: SavedCanvas) => {
+    const { nodes: incoming, edges: incomingEdges } = deserializeCanvas(saved);
+
+    const maxNum = incoming.reduce((max, n) => {
+      const m = n.id.match(/^node-(\d+)$/);
+      return m ? Math.max(max, parseInt(m[1], 10)) : max;
+    }, 0);
+    if (maxNum > nodeIdCounter) nodeIdCounter = maxNum;
+
+    const existing = get().nodes;
+    const existingIds = new Set(existing.map((n) => n.id));
+    const placed: Node[] = [];
+    const idRemap = new Map<string, string>();
+
+    for (const node of incoming) {
+      const allPositions = [
+        ...existing.map((n) => n.position),
+        ...placed.map((n) => n.position),
+      ];
+      const pos = findFreeSlot(allPositions, node.position);
+      let id = node.id;
+      if (existingIds.has(id)) {
+        id = nextId();
+        idRemap.set(node.id, id);
+      }
+      placed.push({ ...node, id, position: pos });
+    }
+
+    const finalEdges = incomingEdges
+      .map((e) => ({
+        ...e,
+        source: idRemap.get(e.source) ?? e.source,
+        target: idRemap.get(e.target) ?? e.target,
+      }))
+      .filter(
+        (e) =>
+          !get().edges.some(
+            (ex) =>
+              (ex.source === e.source && ex.target === e.target) ||
+              (ex.source === e.target && ex.target === e.source)
+          )
+      );
+
+    set((s) => ({
+      nodes: [...s.nodes, ...placed],
+      edges: [...s.edges, ...finalEdges],
+    }));
   },
 }));
