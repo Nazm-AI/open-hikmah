@@ -5,5 +5,19 @@
   "enabledPlugins": {
     "andrej-karpathy-skills@karpathy-skills": true,
     "security-guidance@claude-plugins-official": true
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs'),p=require('path');const src='.agents/skills',dst='.claude/skills';if(!fs.existsSync(src))process.exit(0);const skip=new Set(['README.md','CREATION-LOG.md']);const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(p.join(d,e.name)):[p.join(d,e.name)]);walk(src).filter(f=>{const b=p.basename(f);return f.endsWith('.md')&&!skip.has(b)&&!b.startsWith('test-')&&!b.toLowerCase().startsWith('license');}).forEach(s=>{const rel=p.relative(src,s);const d2=p.join(dst,rel);fs.mkdirSync(p.dirname(d2),{recursive:true});fs.copyFileSync(s,d2);});console.log('[skills] synced from .agents/skills');\"",
+            "async": true
+          }
+        ]
+      }
+    ]
   }
 }
