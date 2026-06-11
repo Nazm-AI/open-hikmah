@@ -34,6 +34,9 @@ export function useCanvasPersistence() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function tryRestoreFromLocalStorage() {
+    // Skip if the store was already populated (e.g. by a workspace load that
+    // happened before this canvas mount) so we don't overwrite it.
+    if (useCanvasStore.getState().nodes.length > 0) return;
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (raw) {
