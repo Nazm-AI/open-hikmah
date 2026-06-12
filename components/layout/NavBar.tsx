@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { LayoutTemplate, Sparkles, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
-import { useCanvasStore } from "@/store/canvas";
 
 const BASE_ITEMS = [
   { href: "/canvas", label: "Canvas", icon: LayoutTemplate },
@@ -17,15 +16,14 @@ const BOOKMARKS_ITEM = { href: "/bookmarks", label: "Bookmarks", icon: Heart } a
 export function NavBar() {
   const pathname = usePathname();
   const accessToken = useAuthStore((s) => s.accessToken);
-  const nodeCount = useCanvasStore((s) => s.nodes.length);
 
   const items = accessToken ? [...BASE_ITEMS, BOOKMARKS_ITEM] : [...BASE_ITEMS];
 
   const isActive = (href: string) =>
     href === "/canvas" ? pathname === "/canvas" : pathname.startsWith(href);
 
-  // Canvas action bar owns the mobile bottom strip when there are nodes on canvas.
-  const hideMobileTabs = pathname === "/canvas" && nodeCount > 0;
+  // Canvas has its own mobile controls (action bar + EmptyState); hide nav tabs there.
+  const hideMobileTabs = pathname === "/canvas";
 
   return (
     <>
