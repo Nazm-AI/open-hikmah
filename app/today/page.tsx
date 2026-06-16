@@ -33,12 +33,6 @@ export default async function TodayPage() {
           </p>
         )}
       </main>
-
-      <footer className="shrink-0 border-t border-border px-6 py-4 md:px-12">
-        <p className="text-[13px] text-text-muted">
-          Open Hikmah · Qur&apos;an text &amp; translation from canonical sources.
-        </p>
-      </footer>
     </div>
   );
 }

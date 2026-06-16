@@ -2,28 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutTemplate, Sparkles, Heart } from "lucide-react";
+import { LayoutTemplate, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/auth";
+import { useCanvasStore } from "@/store/canvas";
 
-const BASE_ITEMS = [
+// The NavBar is the single place for primary section navigation. Personal items
+// (Bookmarks, Saved canvases, Friends) live in the AccountMenu — never duplicated
+// here — so there is exactly one home for each destination.
+const ITEMS = [
   { href: "/canvas", label: "Canvas", icon: LayoutTemplate },
   { href: "/names", label: "Asma’ul Husna", icon: Sparkles },
 ] as const;
 
-const BOOKMARKS_ITEM = { href: "/bookmarks", label: "Bookmarks", icon: Heart } as const;
-
 export function NavBar() {
   const pathname = usePathname();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const nodeCount = useCanvasStore((s) => s.nodes.length);
 
-  const items = accessToken ? [...BASE_ITEMS, BOOKMARKS_ITEM] : [...BASE_ITEMS];
+  const items = ITEMS;
 
   const isActive = (href: string) =>
     href === "/canvas" ? pathname === "/canvas" : pathname.startsWith(href);
 
-  // Canvas has its own mobile controls (action bar + EmptyState); hide nav tabs there.
-  const hideMobileTabs = pathname === "/canvas";
+  // On the canvas, hide the mobile tabs only once it has nodes — that's when the
+  // Header's mobile action bar takes over the bottom edge (and the two fixed bars
+  // would otherwise collide). On an empty canvas the tabs stay, so mobile users
+  // can still navigate away (the EmptyState is centred and isn't obscured).
+  const hideMobileTabs = pathname === "/canvas" && nodeCount > 0;
 
   return (
     <>
