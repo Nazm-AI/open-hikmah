@@ -12,10 +12,12 @@ import type { EdgeKind } from "@/types/quran";
  * accessibility tree and off the tab order.
  *
  * Layout follows the real canvas: a root node on the left fans out to spoke nodes
- * on the right, leaving a WIDE empty corridor down the middle. The reason-labels
- * live stacked in that corridor — so, like the real canvas, they sit in open space
- * and never cover a card. Reverence first: every ayah renders in FULL (never
- * clamped) and nothing — no label, no node — is ever placed over Arabic text.
+ * on the right, leaving a WIDE empty corridor down the middle. At sm+ the
+ * reason-labels live stacked in that corridor — so, like the real canvas, they sit
+ * in open space and never cover a card; on narrow mobile the corridor is too tight,
+ * so the labels are hidden (the edges still convey the connection). Reverence first:
+ * every ayah renders in FULL (never clamped) and nothing — no label, no node — is
+ * ever placed over Arabic text.
  *
  * Verses are a real cluster on the theme of divine mercy / the Basmalah. Text is
  * canonical (Arabic: ar-simple-clean; translation: Abdel Haleem); every edge label
@@ -46,10 +48,15 @@ interface PreviewEdge {
 
 // Root left, spokes right → a wide empty middle for the labels. The three right
 // spokes are spread far apart vertically (15 / 50 / 85) so their cards never
-// overlap each other — covering an ayah would be disrespectful. Combined with the
-// 2-line translation clamp below (the Arabic always shows in full), every card's
-// box stays clear of its neighbours, and x stays inside a safe band so nothing
-// clips at the scene edge.
+// overlap each other — covering an ayah would be disrespectful. The two edge
+// positions (y=15 / y=85) hold the SHORT verses (Al-Fatihah 1:3, Ar-Rahman 55:1),
+// whose cards are small enough that they don't reach the top/bottom of the
+// h-[450px] scene; the only TALL card (An-Naml 27:30, long translation) sits at
+// y=50 where there's the most room. Don't pull the edge spokes back toward 20/80:
+// that shrinks the gap to the tall middle card and reintroduces card overlap.
+// Combined with the 2-line translation clamp below (the Arabic always shows in
+// full), every card's box stays clear of its neighbours, and x stays inside a safe
+// band so nothing clips at the scene edge.
 const ROOT = { x: 23, y: 50 };
 const N_RAHEEM = { x: 76, y: 15 };
 const N_NAML = { x: 77, y: 50 };
@@ -218,7 +225,8 @@ export function CanvasPreview({ className }: { className?: string }) {
         <PreviewCard key={node.ref} node={node} delay={`${-1.5 * i}s`} />
       ))}
 
-      {/* Reason labels, stacked in the open middle corridor (clear of every card) */}
+      {/* Reason labels, stacked in the open middle corridor (clear of every card).
+          Shown at sm+; hidden on narrow mobile where the corridor is too tight. */}
       {EDGES.map((e, i) => (
         <span
           key={i}
