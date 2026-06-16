@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutTemplate, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCanvasStore } from "@/store/canvas";
 
 // The NavBar is the single place for primary section navigation. Personal items
 // (Bookmarks, Saved canvases, Friends) live in the AccountMenu — never duplicated
@@ -15,14 +16,18 @@ const ITEMS = [
 
 export function NavBar() {
   const pathname = usePathname();
+  const nodeCount = useCanvasStore((s) => s.nodes.length);
 
   const items = ITEMS;
 
   const isActive = (href: string) =>
     href === "/canvas" ? pathname === "/canvas" : pathname.startsWith(href);
 
-  // Canvas has its own mobile controls (action bar + EmptyState); hide nav tabs there.
-  const hideMobileTabs = pathname === "/canvas";
+  // On the canvas, hide the mobile tabs only once it has nodes — that's when the
+  // Header's mobile action bar takes over the bottom edge (and the two fixed bars
+  // would otherwise collide). On an empty canvas the tabs stay, so mobile users
+  // can still navigate away (the EmptyState is centred and isn't obscured).
+  const hideMobileTabs = pathname === "/canvas" && nodeCount > 0;
 
   return (
     <>

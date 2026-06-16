@@ -74,7 +74,7 @@ export function CanvasTour() {
   const isLast = step === STEPS.length - 1;
 
   return (
-    <div className="pointer-events-none absolute bottom-20 left-1/2 z-50 w-[min(360px,calc(100vw-2rem))] -translate-x-1/2 md:bottom-6 md:left-6 md:translate-x-0">
+    <div className="pointer-events-none absolute bottom-[calc(70px+env(safe-area-inset-bottom))] left-1/2 z-50 w-[min(360px,calc(100vw-2rem))] -translate-x-1/2 md:bottom-6 md:left-6 md:translate-x-0">
       <Card
         variant="floating"
         role="dialog"
