@@ -1,13 +1,16 @@
 import { lt, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { rateLimits } from "@/lib/db/schema";
+import { redisIncrWithTtl } from "@/lib/redis";
 
 /**
- * Fixed-window rate limiter backed by Postgres (no Redis). Guards the expensive
- * AI generation path so a single client can't run up the API bill. Cache hits
- * are not limited — only actual generations consume budget.
+ * Fixed-window rate limiter. Guards the expensive AI generation path so a single
+ * client can't run up the API bill. Cache hits are not limited — only actual
+ * generations consume budget.
  *
- * Redis is the upgrade path once traffic warrants it; the interface stays the same.
+ * Counts live in Redis when configured (atomic INCR+EXPIRE, no DB contention) and
+ * fall back to a Postgres counter when Redis is absent or erroring — so the same
+ * limit is enforced regardless of which backend is available.
  */
 
 export class RateLimitError extends Error {
@@ -75,6 +78,14 @@ export async function consume(
 ): Promise<boolean> {
   const bucket = Math.floor(Date.now() / 1000 / windowSeconds);
   const rowKey = `${key}:${bucket}`;
+
+  // Prefer Redis: atomic, no Postgres write contention. Expire after two windows
+  // so the bucket key self-cleans. Returns null when Redis is disabled/erroring,
+  // in which case we fall through to the Postgres counter below.
+  const redisCount = await redisIncrWithTtl(`rl:${rowKey}`, windowSeconds * 2);
+  if (redisCount !== null) {
+    return redisCount <= limit;
+  }
 
   try {
     const rows = await db
