@@ -37,8 +37,16 @@ export async function POST(req: NextRequest) {
     });
 
     if (!res.ok) {
-      const response = NextResponse.json({ error: "Session expired" }, { status: 401 });
-      response.cookies.delete(COOKIE_NAME);
+      // Only clear the session when the grant is genuinely invalid/expired/revoked.
+      // On transient upstream errors (5xx, etc.) keep the cookie so the next load
+      // can recover instead of forcing a re-login.
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      const invalidGrant = body?.error === "invalid_grant";
+      const response = NextResponse.json(
+        { error: invalidGrant ? "Session expired" : "Refresh failed" },
+        { status: invalidGrant ? 401 : 503 }
+      );
+      if (invalidGrant) response.cookies.delete(COOKIE_NAME);
       return response;
     }
 
@@ -49,8 +57,7 @@ export async function POST(req: NextRequest) {
     response.cookies.set(COOKIE_NAME, data.refresh_token ?? refreshToken, cookieOptions(60 * 60 * 24 * 30));
     return response;
   } catch {
-    const response = NextResponse.json({ error: "Session expired" }, { status: 401 });
-    response.cookies.delete(COOKIE_NAME);
-    return response;
+    // Network/transport failure — transient. Keep the cookie so a later load recovers.
+    return NextResponse.json({ error: "Refresh failed" }, { status: 503 });
   }
 }
