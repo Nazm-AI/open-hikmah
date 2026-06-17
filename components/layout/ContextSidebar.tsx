@@ -285,13 +285,13 @@ export function ContextSidebar() {
                   </span>
                 </div>
 
-                <InteractiveArabic key={sidebarContent.verse.ref} verse={sidebarContent.verse} />
+                <InteractiveArabic key={`arabic-${sidebarContent.verse.ref}`} verse={sidebarContent.verse} />
 
                 <p className="text-sm leading-relaxed text-text-secondary">
                   {sidebarContent.verse.translation}
                 </p>
 
-                <TafsirSection key={sidebarContent.verse.ref} surah={sidebarContent.verse.surah} ayah={sidebarContent.verse.ayah} />
+                <TafsirSection key={`tafsir-${sidebarContent.verse.ref}`} surah={sidebarContent.verse.surah} ayah={sidebarContent.verse.ayah} />
 
                 <NotesSection key={`notes-${sidebarContent.verse.ref}`} verseRef={sidebarContent.verse.ref} />
                 <SimilarSection key={`similar-${sidebarContent.verse.ref}`} surah={sidebarContent.verse.surah} ayah={sidebarContent.verse.ayah} />
