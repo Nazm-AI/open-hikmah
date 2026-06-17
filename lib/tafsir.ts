@@ -21,8 +21,22 @@ function decodeEntities(s: string): string {
     .replace(/&([a-z]+);/gi, (m, name: string) => ENTITIES[name.toLowerCase()] ?? m);
 }
 
+/**
+ * Reduce a fragment of HTML to plain text. Decode entities first (so an
+ * entity-encoded bracket can't survive as markup), strip tags repeatedly until
+ * the string stops changing (a single pass can leave a reconstructed tag, e.g.
+ * `<scr<script>ipt>`), then remove any stray/unterminated angle brackets. The
+ * result is guaranteed to contain no `<`/`>`, so it's safe even before React
+ * escapes it on render.
+ */
 function stripTags(s: string): string {
-  return decodeEntities(s.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
+  let out = decodeEntities(s);
+  let prev: string;
+  do {
+    prev = out;
+    out = out.replace(/<[^>]*>/g, "");
+  } while (out !== prev);
+  return out.replace(/[<>]/g, "").replace(/\s+/g, " ").trim();
 }
 
 export function htmlToTafsirBlocks(html: string): TafsirBlock[] {
