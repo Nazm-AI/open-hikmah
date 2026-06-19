@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { nameContent } from "@/lib/db/schema";
+import { nameContent, type NameContentKind } from "@/lib/db/schema";
 
 /**
  * Durable, write-once/read-many cache for the AI-generated 99-Names content
@@ -11,10 +11,13 @@ import { nameContent } from "@/lib/db/schema";
  * connection graph uses (see lib/graph-service.ts).
  */
 
-export type NameContentKind = "verses" | "reflection" | "pairings";
+export type { NameContentKind };
 
-// Per-process single-flight: concurrent first-loads of the same (slug, kind)
-// share one generation instead of each calling the AI (mirrors graph-service).
+// Per-process single-flight: concurrent first-loads of the same (slug, kind,
+// version) share one generation instead of each calling the AI (mirrors
+// graph-service). The value is `Promise<unknown>` because the map is shared
+// across kinds; each key is only ever produced by one call site with one `T`,
+// so the `as Promise<T>` read below is sound (see getOrGenerateNameContent).
 const inFlight = new Map<string, Promise<unknown>>();
 
 /**
@@ -51,8 +54,10 @@ export async function getOrGenerateNameContent<T>(
   }
 
   // 2. Single-flight: the get→set stays synchronous so two concurrent callers
-  // can't both become the leader.
-  const key = `${slug}:${kind}`;
+  // can't both become the leader. `version` is part of the key so a follower can
+  // never join a generation running under a different version (defensive — the
+  // version is a per-route constant, so this only differs across a deploy).
+  const key = `${slug}:${kind}:${version}`;
   const pending = inFlight.get(key);
   if (pending) return pending as Promise<T>;
 

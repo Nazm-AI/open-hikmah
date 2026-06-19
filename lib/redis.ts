@@ -104,6 +104,12 @@ export async function redisDel(key: string): Promise<void> {
  * Atomically increments `key` and ensures it expires after `ttlSeconds`,
  * returning the new count. Returns null when Redis is disabled or errors, so
  * callers can fall back to another limiter. Used by the rate limiter.
+ *
+ * Re-applying EXPIRE on every increment is intentional and benign: callers embed
+ * a time-window bucket in the key (see lib/rate-limit.ts), so each window gets a
+ * fresh key and the count resets at the window boundary regardless — the repeated
+ * EXPIRE only keeps the current bucket's self-cleanup TTL fresh, it does not slide
+ * the rate-limit window.
  */
 export async function redisIncrWithTtl(key: string, ttlSeconds: number): Promise<number | null> {
   const r = getRedis();

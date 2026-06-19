@@ -260,4 +260,15 @@ describe("getConnections — single-flight de-duplication", () => {
     await getConnections("1:1", "thematic", source);
     expect(mockGenerate).toHaveBeenCalledTimes(2);
   });
+
+  it("surfaces a generation error and clears the lock so the next call retries", async () => {
+    mockGenerate
+      .mockRejectedValueOnce(new Error("ai down"))
+      .mockImplementation(async () => [result("2:255")]);
+    await expect(getConnections("1:1", "thematic", source)).rejects.toThrow("ai down");
+    // finally{} cleared the in-flight entry → a fresh call generates again
+    const out = await getConnections("1:1", "thematic", source);
+    expect(out).toHaveLength(1);
+    expect(mockGenerate).toHaveBeenCalledTimes(2);
+  });
 });

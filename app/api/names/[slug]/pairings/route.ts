@@ -46,9 +46,15 @@ async function getPairings(slug: string): Promise<Pairing[]> {
       let raw: Array<{ transliteration: string; arabic: string; explanation: string }>;
       try {
         const match = text.match(/\[[\s\S]*\]/);
-        if (!match) return [];
+        if (!match) {
+          console.error(`Pairings: no JSON array in AI response for ${slug}`);
+          return [];
+        }
         raw = JSON.parse(match[0]);
-      } catch {
+      } catch (err) {
+        // Malformed AI JSON returns empty (not cached, so it retries) — but log it
+        // so a persistently broken response is visible instead of a silent cost sink.
+        console.error(`Pairings: failed to parse AI response for ${slug}:`, err);
         return [];
       }
 

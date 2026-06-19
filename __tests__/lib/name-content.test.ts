@@ -133,4 +133,20 @@ describe("getOrGenerateNameContent", () => {
     expect(b).toBe(a);
     expect(c).toBe(a);
   });
+
+  it("surfaces a generate() rejection and clears the lock so the next call retries", async () => {
+    mockSelect.mockReturnValue(makeSelectChain([])); // miss
+    const generate = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("boom"))
+      .mockResolvedValue(["ok"]);
+
+    await expect(
+      getOrGenerateNameContent("al-malik", "verses", 1, generate, isEmptyArr)
+    ).rejects.toThrow("boom");
+    // lock released in finally → fresh call regenerates
+    const out = await getOrGenerateNameContent("al-malik", "verses", 1, generate, isEmptyArr);
+    expect(out).toEqual(["ok"]);
+    expect(generate).toHaveBeenCalledTimes(2);
+  });
 });

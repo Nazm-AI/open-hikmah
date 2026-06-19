@@ -90,7 +90,10 @@ Output format:
     if (!match) return new Map();
     const obj = JSON.parse(match[0]) as Record<string, string>;
     return new Map(Object.entries(obj));
-  } catch {
+  } catch (err) {
+    // Reasons are best-effort (a default reason is used per verse if missing) —
+    // log so a persistently malformed AI response is visible, not silent.
+    console.error(`Name verses: failed to parse AI reasons for ${transliteration}:`, err);
     return new Map();
   }
 }
@@ -111,7 +114,10 @@ Return ONLY a JSON array:
     const match = text.match(/\[[\s\S]*\]/);
     if (!match) return [];
     return JSON.parse(match[0]) as Array<{ ref: string; reason: string }>;
-  } catch {
+  } catch (err) {
+    // Empty result is not cached (it retries), but log the parse failure so a
+    // broken prompt surfaces instead of silently re-invoking the AI forever.
+    console.error(`Name verses: AI fallback failed for ${transliteration}:`, err);
     return [];
   }
 }

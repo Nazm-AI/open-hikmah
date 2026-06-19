@@ -306,12 +306,15 @@ export const wordMorphology = pgTable(
 // `data` is the JSON-encoded payload for that (slug, kind); `version` lets a
 // prompt change force regeneration by bumping the per-kind constant in code.
 
+/** The kinds of AI content cached per name. Single source of truth for the
+ *  `name_content.kind` column and the `lib/name-content.ts` helper. */
+export type NameContentKind = "verses" | "reflection" | "pairings";
+
 export const nameContent = pgTable(
   "name_content",
   {
     slug: text("slug").notNull(),
-    // 'verses' | 'reflection' | 'pairings'
-    kind: text("kind").notNull(),
+    kind: text("kind").$type<NameContentKind>().notNull(),
     data: text("data").notNull(),
     model: text("model"),
     version: integer("version").notNull().default(1),

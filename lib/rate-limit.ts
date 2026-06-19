@@ -90,6 +90,10 @@ export async function consume(
     return allowed;
   }
 
+  // Redis unavailable → Postgres fallback. Count it so a silent Redis outage is
+  // visible on /api/metrics rather than only inferable from missing allow/block.
+  incr("ratelimit_redis_fallback");
+
   try {
     const rows = await db
       .insert(rateLimits)
@@ -102,8 +106,14 @@ export async function consume(
 
     const count = rows[0]?.count ?? 1;
     maybeSweep(windowSeconds);
-    return count <= limit;
+    const allowed = count <= limit;
+    incr(allowed ? "ratelimit_allow" : "ratelimit_block");
+    return allowed;
   } catch (err) {
+    // Fail open so a limiter outage never takes the feature down — but emit a
+    // counter, because a security control that stops enforcing under load (e.g.
+    // a correlated Redis+DB outage) must not do so without a signal.
+    incr("ratelimit_fail_open");
     console.error("Rate limiter error (failing open):", err);
     return true;
   }
