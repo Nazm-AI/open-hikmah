@@ -11,6 +11,14 @@ export interface AuthedUser {
   user: User;
 }
 
+// A soft-disabled account (set by an admin) is rejected at the auth boundary.
+// Returned as 403 so the client can distinguish "disabled" from "not signed in".
+// Note: a freshly-disabled user may linger until their cached entry expires
+// (≤5 min) or the token caches are flushed from the admin Infra panel.
+function disabledResponse(): NextResponse {
+  return NextResponse.json({ error: "Account disabled" }, { status: 403 });
+}
+
 // Two-tier token cache: an in-process L1 Map (fastest, per-instance) backed by a
 // Redis L2 (shared across instances, survives restarts). The L1 keeps the hot
 // path zero-round-trip; the L2 means a deploy/restart no longer logs everyone out
@@ -30,6 +38,25 @@ function tokenRedisKey(token: string): string {
 export function invalidateTokenCache(token: string): void {
   tokenCache.delete(token);
   void redisDel(tokenRedisKey(token));
+}
+
+/**
+ * Clears the in-process token cache (admin Infra action). Forces every request
+ * to re-resolve its user on the next call, so a just-disabled account stops being
+ * served from this instance's L1 immediately. Redis L2 token entries expire on
+ * their own ≤5-min TTL. Returns how many entries were dropped.
+ */
+export function clearTokenCache(): number {
+  const n = tokenCache.size;
+  tokenCache.clear();
+  return n;
+}
+
+/** Drops the cached JWKS (in-process + Redis) so the next verify refetches QF's
+ *  signing keys — used after a key rotation from the admin Infra panel. */
+export function clearJwksCache(): void {
+  jwksCache = null;
+  void redisDel(JWKS_REDIS_KEY);
 }
 
 // ─── JWT signature verification ───────────────────────────────────────────────
@@ -185,6 +212,7 @@ export async function requireUser(
   const cached = tokenCache.get(token);
   if (cached && cached.expiresAt > Date.now()) {
     incr("auth_l1_hit");
+    if (cached.user.disabledAt) return disabledResponse();
     return { userId: cached.user.id, user: cached.user };
   }
 
@@ -197,6 +225,8 @@ export async function requireUser(
       const [u] = await db.select().from(users).where(eq(users.id, id)).limit(1);
       if (u) {
         incr("auth_l2_hit");
+        // Reject (and don't cache) a disabled account before populating L1.
+        if (u.disabledAt) return disabledResponse();
         tokenCache.set(token, { user: u, expiresAt: Date.now() + CACHE_TTL_MS });
         return { userId: u.id, user: u };
       }
@@ -231,6 +261,8 @@ export async function requireUser(
     }
   }
   incr("auth_cache_miss");
+  // Reject (and don't cache) a disabled account before populating L1/L2.
+  if (user.disabledAt) return disabledResponse();
   tokenCache.set(token, { user, expiresAt: Date.now() + CACHE_TTL_MS });
   void redisSet(tokenRedisKey(token), String(user.id), CACHE_TTL_SECONDS);
   return { userId: user.id, user };
