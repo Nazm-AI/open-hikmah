@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useAuthStore } from "@/store/auth";
-import { Loader2, Swords } from "lucide-react";
-import { Input } from "@/components/ui";
+import { Loader2, Swords, X } from "lucide-react";
+import { Button, Input } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 interface AcceptedFriend {
@@ -11,20 +11,36 @@ interface AcceptedFriend {
   username: string;
 }
 
+/** A suggestion the user picked to seed this challenge. */
+export interface ChallengePrefill {
+  duration?: string | null;
+  verseRef?: string | null;
+  suggestionId?: number;
+  title?: string;
+}
+
 interface Props {
   friends: AcceptedFriend[];
   loadingFriends?: boolean;
   onCreated: () => void;
+  prefill?: ChallengePrefill | null;
+  onClearPrefill?: () => void;
 }
 
 const DURATIONS = ["24h", "48h", "7d"] as const;
 type Duration = (typeof DURATIONS)[number];
 
-export function CreateChallengeForm({ friends, loadingFriends, onCreated }: Props) {
+function isDuration(d: string | null | undefined): d is Duration {
+  return d === "24h" || d === "48h" || d === "7d";
+}
+
+export function CreateChallengeForm({ friends, loadingFriends, onCreated, prefill, onClearPrefill }: Props) {
   const accessToken = useAuthStore((s) => s.accessToken);
+  // Initial values seed from a picked suggestion (the form is remounted via `key`
+  // when a new suggestion is chosen, so these initializers re-run).
   const [selectedFriend, setSelectedFriend] = useState("");
-  const [duration, setDuration] = useState<Duration>("24h");
-  const [verseRef, setVerseRef] = useState("");
+  const [duration, setDuration] = useState<Duration>(isDuration(prefill?.duration) ? prefill!.duration : "24h");
+  const [verseRef, setVerseRef] = useState(prefill?.verseRef ?? "");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -40,26 +56,23 @@ export function CreateChallengeForm({ friends, loadingFriends, onCreated }: Prop
     try {
       const res = await fetch("/api/social/challenges", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({
           challengedUsername: selectedFriend,
           duration,
           verseRef: verseRef.trim() || undefined,
+          suggestionId: prefill?.suggestionId,
         }),
       });
-
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Could not send challenge");
         return;
       }
-
       setSuccess(`Challenge sent to @${selectedFriend}!`);
       setSelectedFriend("");
       setVerseRef("");
+      onClearPrefill?.();
       onCreated();
     } catch {
       setError("Network error. Try again.");
@@ -77,31 +90,38 @@ export function CreateChallengeForm({ friends, loadingFriends, onCreated }: Prop
   }
 
   if (friends.length === 0) {
-    return <p className="text-xs text-text-muted">Add friends first to challenge them.</p>;
+    return <p className="text-sm text-text-muted">Add friends first to challenge them.</p>;
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      {/* Friend selector */}
+    <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-border bg-surface p-4">
+      {prefill?.title && (
+        <div className="flex items-center justify-between gap-2 rounded-md border-l-2 border-teal bg-teal/[0.06] px-3 py-1.5">
+          <span className="text-xs text-text-secondary">
+            From suggestion: <span className="text-teal">{prefill.title}</span>
+          </span>
+          {onClearPrefill && (
+            <button type="button" onClick={onClearPrefill} aria-label="Clear suggestion" className="text-text-muted hover:text-text-primary">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
       <select
         value={selectedFriend}
         onChange={(e) => { setSelectedFriend(e.target.value); setError(null); setSuccess(null); }}
         className={cn(
-          "w-full cursor-pointer appearance-none rounded border border-border bg-surface px-3 py-1.5 text-sm transition-colors focus:border-gold-muted",
+          "w-full cursor-pointer appearance-none rounded-md border border-border bg-surface px-3 py-2 text-sm transition-colors focus:border-gold-muted",
           selectedFriend ? "text-text-primary" : "text-text-muted"
         )}
       >
-        <option value="" disabled className="bg-surface">
-          Choose a friend to challenge…
-        </option>
+        <option value="" disabled className="bg-surface">Choose a friend to challenge…</option>
         {friends.map((f) => (
-          <option key={f.id} value={f.username} className="bg-surface">
-            @{f.username}
-          </option>
+          <option key={f.id} value={f.username} className="bg-surface">@{f.username}</option>
         ))}
       </select>
 
-      {/* Duration */}
       <div className="flex gap-2">
         {DURATIONS.map((d) => (
           <button
@@ -109,10 +129,10 @@ export function CreateChallengeForm({ friends, loadingFriends, onCreated }: Prop
             type="button"
             onClick={() => setDuration(d)}
             className={cn(
-              "flex-1 cursor-pointer rounded border py-1.5 text-xs font-medium transition-colors",
+              "flex-1 cursor-pointer rounded-md border py-1.5 text-xs font-medium transition-colors",
               duration === d
-                ? "border-teal bg-surface-raised text-teal"
-                : "border-border text-text-muted hover:text-text-secondary"
+                ? "border-gold-muted bg-gold/10 text-gold"
+                : "border-border text-text-muted hover:border-gold-muted"
             )}
           >
             {d}
@@ -120,7 +140,6 @@ export function CreateChallengeForm({ friends, loadingFriends, onCreated }: Prop
         ))}
       </div>
 
-      {/* Optional verse */}
       <Input
         type="text"
         value={verseRef}
@@ -129,23 +148,13 @@ export function CreateChallengeForm({ friends, loadingFriends, onCreated }: Prop
         maxLength={20}
         autoComplete="off"
         spellCheck={false}
-        className="h-auto rounded px-3 py-1.5"
       />
 
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={sending || !selectedFriend}
-          className="flex cursor-pointer items-center gap-1.5 rounded border border-teal px-3 py-1.5 text-xs font-medium text-teal transition-colors hover:bg-teal/10 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {sending ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Swords className="h-3.5 w-3.5" />
-          )}
+        <Button type="submit" variant="primary" size="sm" disabled={sending || !selectedFriend} className="gap-1.5">
+          {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Swords className="h-3.5 w-3.5" />}
           Challenge
-        </button>
-
+        </Button>
         {error && <p className="text-xs text-error">{error}</p>}
         {success && <p className="text-xs text-teal">{success}</p>}
       </div>
