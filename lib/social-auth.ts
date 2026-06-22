@@ -27,20 +27,18 @@ function disabledResponse(): NextResponse {
  * `redirect_uri` isn't registered with QF yet).
  *
  * FAIL-CLOSED and triple-gated:
- *   1. both env vars must be set, AND
- *   2. the token must match exactly, AND
- *   3. NODE_ENV must not be "production" — unless `DEV_AUTH_ALLOW_PROD=true` is
- *      explicitly set (for a prelive/staging box that runs a prod build).
- * NEVER set these in a real production deployment. To make the dev user an admin,
- * add the same `DEV_AUTH_QF_ID` value to `ADMIN_QF_IDS`.
+ *   1. NODE_ENV must NOT be "production" — there is no override, so this bypass
+ *      can never be enabled in a production build, AND
+ *   2. both env vars must be set, AND
+ *   3. the token must match exactly.
+ * To make the dev user an admin, add the same `DEV_AUTH_QF_ID` to `ADMIN_QF_IDS`.
  */
 async function resolveDevUser(token: string): Promise<User | null> {
+  // Hard off in production — dev/test only, no escape hatch.
+  if (process.env.NODE_ENV === "production") return null;
   const secret = process.env.DEV_AUTH_TOKEN;
   const qfId = process.env.DEV_AUTH_QF_ID;
   if (!secret || !qfId || token !== secret) return null;
-  if (process.env.NODE_ENV === "production" && process.env.DEV_AUTH_ALLOW_PROD !== "true") {
-    return null;
-  }
 
   const [existing] = await db.select().from(users).where(eq(users.qfId, qfId)).limit(1);
   if (existing) return existing;

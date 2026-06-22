@@ -167,7 +167,6 @@ describe("requireUser — dev/test login bypass", () => {
   afterEach(() => {
     delete process.env.DEV_AUTH_TOKEN;
     delete process.env.DEV_AUTH_QF_ID;
-    delete process.env.DEV_AUTH_ALLOW_PROD;
     vi.unstubAllEnvs();
   });
 
@@ -193,7 +192,7 @@ describe("requireUser — dev/test login bypass", () => {
     expect("status" in res && (res as Response).status).toBe(401);
   });
 
-  it("is disabled under NODE_ENV=production unless DEV_AUTH_ALLOW_PROD=true", async () => {
+  it("is hard-disabled under NODE_ENV=production (no override)", async () => {
     process.env.DEV_AUTH_TOKEN = "dev-secret";
     process.env.DEV_AUTH_QF_ID = "dev-admin";
     vi.stubEnv("NODE_ENV", "production");
