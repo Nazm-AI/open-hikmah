@@ -97,16 +97,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Branded letterhead — logo + project name, top-right of every admin page. */}
-        <div className="flex h-12 shrink-0 items-center justify-end gap-2.5 border-b border-border px-7">
-          <Image src="/logo-mark.png" alt="" width={20} height={20} className="size-5" />
-          <span className="font-arabic text-[19px] leading-none tracking-wide text-text-primary">
-            Open <span className="text-gold">Hikmah</span>
-          </span>
-        </div>
-        {children}
-      </div>
+      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+    </div>
+  );
+}
+
+/** The Open Hikmah letterhead — logo + name in Amiri serif, "Hikmah" in gold.
+ *  Right-aligned in every admin page header. */
+function AdminBrand() {
+  return (
+    <div className="flex shrink-0 items-center gap-2.5">
+      <Image src="/logo-mark.png" alt="" width={20} height={20} className="size-5" />
+      <span className="font-arabic text-[19px] leading-none tracking-wide text-text-primary">
+        Open <span className="text-gold">Hikmah</span>
+      </span>
     </div>
   );
 }
@@ -125,12 +129,25 @@ export function AdminPageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <header className="flex items-start justify-between gap-4 border-b border-border px-7 py-5">
-      <div>
-        <h1 className="text-base font-semibold text-text-primary">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-sm text-text-secondary">{subtitle}</p>}
-      </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
-    </header>
+    <>
+      {/* Single branded header: page title (with a gold tick) + subtitle on the
+          left, the Open Hikmah letterhead on the right. */}
+      <header className="flex items-start justify-between gap-4 px-7 pb-4 pt-5">
+        <div className="min-w-0">
+          <h1 className="relative pl-3 text-xl font-semibold text-text-primary before:absolute before:bottom-1 before:left-0 before:top-1 before:w-[3px] before:rounded-full before:bg-gold before:content-['']">
+            {title}
+          </h1>
+          {subtitle && <p className="mt-1 pl-3 text-sm text-text-secondary">{subtitle}</p>}
+        </div>
+        <AdminBrand />
+      </header>
+      {/* Gold accent rule, fading to the right. */}
+      <div className="h-px bg-gradient-to-r from-gold/70 to-transparent" />
+      {actions && (
+        <div className="border-b border-border px-7 py-3">
+          <div className="flex items-center gap-2">{actions}</div>
+        </div>
+      )}
+    </>
   );
 }
